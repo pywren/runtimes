@@ -12,10 +12,10 @@ import cloudpickle
 import json
 import base64
 import cPickle as pickle
-from pywren.wrenconfig import * 
 import json
 import runtimes
 import yaml
+import os
 
 tgt_ami = 'ami-7172b611'
 region = 'us-west-2'
@@ -235,7 +235,7 @@ def package_all(s3url):
 
 
 @task
-def build_runtimes(s3url_base="s3://ericmjonas-public/pywren.runtime.staging"):
+def build_runtimes():
     for runtime_name, v in runtimes.RUNTIMES.items():
         python_ver = v[0]
         execute(create_runtime, python_ver, v[1], v[2], v[3])
@@ -255,16 +255,15 @@ def build_runtimes(s3url_base="s3://ericmjonas-public/pywren.runtime.staging"):
                         'pkg_ver_list' : freeze_pkgs, 
                         'conda_env_config': conda_env}
         
-        s3url = "{}/pywren_runtime-{}-{}".format(s3url_base, python_ver, runtime_name)
-        execute(package_all, s3url + ".tar.gz")
+        runtime_tar_gz, runtime_meta_json = runtimes.get_staged_runtime_url(runtime_name, 
+                                                                     python_ver)
+
+        execute(package_all, runtime_tar_gz)
         with open('runtime.meta.json', 'w') as outfile:
             json.dump(runtime_dict, outfile)        
             outfile.flush()
 
-        local("aws s3 cp runtime.meta.json {}".format(s3url + ".meta.json"))
-            
-            
-
+        local("aws s3 cp runtime.meta.json {}".format(runtime_meta_json))
         
 
 @task
