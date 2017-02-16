@@ -34,7 +34,7 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy pytest cython nose boto3 PyYAML Click pytest
   - source activate test-environment
   - pip install glob2
-  - python setup.py install
+  - pip install https://github.com/ericmjonas/pywren.git
 
 
   
@@ -44,31 +44,21 @@ before_script:
   - pywren test_config
   - pywren create_config --lambda_role=pywren_travis_test_$BUILD_GUID --function_name=pywren_travis_$BUILD_GUID --bucket_name=jonas-testbucket2 --sqs_queue=pywren_travis_$BUILD_GUID --standalone_name=pywren_travis_$BUILD_GUID --pythonver=$TRAVIS_PYTHON_VERSION
   - pywren create_role
-  - pywren create_instance_profile
-  - pywren create_queue
   - sleep 10
   - pywren deploy_lambda
   
 script: # all run but inside the scripts they check 
-  - tests/lambda_tests.sh
-  - tests/ec2_standalone_tests.sh
-  - tests/ec2_macroreduce_tests.sh
+  - python testscript.py
   
 
 after_script:
   # always make sure we do this cleanup if we can
-  - pywren delete_queue
   - pywren delete_lambda
-  - pywren delete_instance_profile
   - pywren delete_role
-  - pywren standalone terminate_instances
 
 after_failure:
-  - pywren delete_queue
-  - pywren delete_instance_profile
   - pywren delete_lambda  
   - pywren delete_role
-  - pywren standalone terminate_instances
 
 env:
   global:

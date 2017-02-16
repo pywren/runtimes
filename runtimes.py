@@ -6,10 +6,9 @@ CONDA_DEFAULT_LIST = ["tblib",
                       "numba", 
                       "boto3", 
                       "PyYAML", 
-                      "cython", 
-                      "boto"]
+                      "cython"]
 
-PIP_DEFAULT_LIST = ['glob2']
+PIP_DEFAULT_LIST = ['glob2', 'boto']
 PIP_DEFAULT_UPGRADE_LIST = ['cloudpickle', 'enum34']
 
 CONDA_ML_SET = ['scipy', 'pillow', 'cvxopt', 'scikit-learn']
@@ -23,7 +22,7 @@ RUNTIMES = {'minimal_2' : {'pythonver' : 2,
                             'conda_install' : CONDA_DEFAULT_LIST, 
                             'pip_install' : PIP_DEFAULT_LIST, 
                             'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST}, 
-            'ml_2' : {'pythonver' : 3, 
+            'ml_2' : {'pythonver' : 2, 
                       'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET, 
                       'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET, 
                       'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST + PIP_DEFAULT_UPGRADE_LIST}, 
@@ -50,7 +49,7 @@ CONDA_TEST_STRS = {'numpy' : "__import__('numpy')",
                    "scikit-learn" : "__import__('sklearn')"}
 PIP_TEST_STRS = {"glob2" : "__import__('glob2')", 
                  "cvxpy" : "__import__('cvxpy')", 
-                 "redis" : "__import__('redis"}
+                 "redis" : "__import__('redis')"}
 
 
 S3URL_BASE = "s3://ericmjonas-public/pywren.runtime.staging"
