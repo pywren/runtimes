@@ -19,7 +19,7 @@ for runtime_name, runtime_config in runtimes.RUNTIMES.items():
     # skip all of the ones not for this version of python. Someday we should
     # be smarter about this
     if sys.version_info.major == python_ver:
-
+        print("running runtime config {}".format(runtime_name))
 
         # create an executor
         config = pywren.wrenconfig.default()
@@ -30,7 +30,7 @@ for runtime_name, runtime_config in runtimes.RUNTIMES.items():
         key = "/".join(splits[1:])
         config['runtime']['bucket'] = bucket
         config['runtime']['s3_key'] = key
-        
+        print("running with bucket={} key={}".format(bucket, key)
         wrenexec = pywren.lambda_executor(config)
 
         def import_check(x):
