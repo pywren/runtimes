@@ -30,7 +30,7 @@ for runtime_name, runtime_config in runtimes.RUNTIMES.items():
         key = "/".join(splits[1:])
         config['runtime']['bucket'] = bucket
         config['runtime']['s3_key'] = key
-        print("running with bucket={} key={}".format(bucket, key)
+        print("running with bucket={} key={}".format(bucket, key))
         wrenexec = pywren.lambda_executor(config)
 
         def import_check(x):
