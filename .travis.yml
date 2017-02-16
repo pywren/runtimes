@@ -1,65 +1,49 @@
 language: python
 sudo: required
-# https://docs.travis-ci.com/user/ci-environment/ to get a modern gcc etc
 dist: trusty
-
-
-# notes from http://conda.pydata.org/docs/travis.html
 python:
-  # We don't actually use the Travis Python, but this keeps it organized.
-  - "2.7"
-  - "3.5"
+- '2.7'
+- '3.5'
 install:
-  # We do this conditionally because it saves us some downloading if the
-  # version is the same. 
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
-      export RANDOM_ID=`python -c "from random import choice; print ''.join([choice('1234567890') for i in range(6)])"`; 
-    else
-      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-      export RANDOM_ID=`python -c "from random import choice; print(''.join([choice('1234567890') for i in range(6)]))"`; 
-    fi
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - printenv TRAVIS_PULL_REQUEST
-  - printenv TRAVIS_PULL_REQUEST_BRANCH
-  - printenv TRAVIS_COMMIT
-  - printenv TRAVIS_BRANCH
-  - printenv
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  # Useful for debugging any issues with conda
-  - conda info -a
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy pytest cython nose boto3 PyYAML Click pytest
-  - source activate test-environment
-  - pip install glob2
-  - pip install git+https://github.com/ericmjonas/pywren.git
-
-
+- if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh
+  -O miniconda.sh; export RANDOM_ID=`python -c "from random import choice; print ''.join([choice('1234567890')
+  for i in range(6)])"`; else wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+  -O miniconda.sh; export RANDOM_ID=`python -c "from random import choice; print(''.join([choice('1234567890')
+  for i in range(6)]))"`; fi
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- printenv TRAVIS_PULL_REQUEST
+- printenv TRAVIS_PULL_REQUEST_BRANCH
+- printenv TRAVIS_COMMIT
+- printenv TRAVIS_BRANCH
+- printenv
+- hash -r
+- conda config --set always_yes yes --set changeps1 no
+- conda update -q conda
+- conda info -a
+- conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy pytest cython
+  nose boto3 PyYAML Click pytest
+- source activate test-environment
+- pip install glob2
+- pip install git+https://github.com/ericmjonas/pywren.git
 before_script:
-  - export BUILD_GUID=`echo $TRAVIS_JOB_NUMBER | sed 's/\./_/g'`_$RANDOM_ID
-  - echo CLEAN BUILD ID IS $BUILD_GUID
-  - pywren test_config
-  - pywren create_config --lambda_role=pywren_travis_test_$BUILD_GUID --function_name=pywren_travis_$BUILD_GUID --bucket_name=jonas-testbucket2 --sqs_queue=pywren_travis_$BUILD_GUID --standalone_name=pywren_travis_$BUILD_GUID --pythonver=$TRAVIS_PYTHON_VERSION
-  - pywren create_role
-  - sleep 10
-  - pywren deploy_lambda
-  
-script: # all run but inside the scripts they check 
-  - python testscript.py
-  
-
+- export BUILD_GUID=`echo $TRAVIS_JOB_NUMBER | sed 's/\./_/g'`_$RANDOM_ID
+- echo CLEAN BUILD ID IS $BUILD_GUID
+- pywren test_config
+- pywren create_config --lambda_role=pywren_travis_test_$BUILD_GUID --function_name=pywren_travis_$BUILD_GUID
+  --bucket_name=jonas-testbucket2 --sqs_queue=pywren_travis_$BUILD_GUID --standalone_name=pywren_travis_$BUILD_GUID
+  --pythonver=$TRAVIS_PYTHON_VERSION
+- pywren create_role
+- sleep 10
+- pywren deploy_lambda
+script:
+- python testscript.py
 after_script:
-  # always make sure we do this cleanup if we can
-  - pywren delete_lambda
-  - pywren delete_role
-
+- pywren delete_lambda
+- pywren delete_role
 after_failure:
-  - pywren delete_lambda  
-  - pywren delete_role
-
+- pywren delete_lambda
+- pywren delete_role
 env:
-  global:
-    - secure: "EZo8fKyGMC780UqZyJRO12W0TZnVm6f14MkijGeTuBOl7rV09RTXAKbhDC4yYUZp1TSHj4+kcMts7V0ZS/PHl+QQazHpt9SA4Yqp5XUNaMrk87cAi/yHK6yFGoinisqDTT4k40Fv57cSoZlvoNK+UtEJv2lz0oFvUcTvxttUSO0KpikIhggp0KO2qWF2n8TxuDfBnfP1vvQjg9J5ge3X08k80LaOGtJYISZNgptYIF72nDJV3N0Cd66m4vfJmuOvO9UqLQx7QljNhxGCYPuLA9BaLYvhvkNAobTiEroOzts/DWgFx0maEPtNsJhuTwrQL1OCoAUW6PqGKJeILQpHkEQEmvhGqzhmyfDqvvg5miL4utGqgTatRapw/Gnfwd8fkvs9P2iem6jhIc7OL/rid73rh1XOaIcsGgiGgRdbIHHNPczBu/UQzZuoBli3+E+6lKi2il65KjNH5yVi3wHg37G2Z6H5WkeE4oQ1JGMjo9IPbhCmbtm7LXZuZNIhkpgWuchvfSFcHZRFN2yFKpN/cmtSv/nesVTPRIuqMMmRds+pxvrotWJQb3j8IJ5NIeJyPR8iAwfvaHvbEsVt+zbvqP5c6J5rkKDNEErXBJqzUWYftCQKuPMdh8/WJd2Eg05wSWBizVVKdf7oT+POumQaVp2B9tCCuRzLL8ciaBqcN8U="
-    - secure: "jnif74QgPCty1WQcicfPThmOy01I+yIMw/6913flFVPnGOhZ7asyHln+O5QGyYTQCjs0EtD32twaxux20CpCv55sBjLOgFfmCrP1LRqJxR1+LfP+MrLn3Reb41kLZ6f7JqGrHGn10Sjc3I5+Z6Yhzbx5rBvLGnl/zvNF+xFFnIG5/Ps/BAX4VOLP/0S+2E0PdKmT5JqXD6+FfiH8J+p78asYVRohB7sBMEPPNKp/bMSnzi4iO0FgZWciSZHQn7jjTEIn1Vlm+RW9Ll87QEtI1Z6kZxlEsgThh/xDP9L1ux2yVKcsfWwZb9kSQMup4MNBKdG0NHTOkOPgnwnL6753DgAUwKAiQ3Avk8NucPakjfht1xnrRrDXhTnlNaguPxotncuFxiBSm9D3durOcjaj5cYeFYz3TCC650safkAXYggX9JQX8gG6Lq1Q4N14mabHHq8QtAZ5HY4cGSNdDlw79WBUsWnz3ufn8RmgJGC1yQcvjhUsNJrrts8EdG4CCgM0SJSpcvA95Enzt1SIB6x9UETHZd+tknAOFv5aXNIFqzx2b8vqrrC6VPVbe2mhrtWIzpKGbUUow6o7OGElFQgFlPFPyP4RGanlW3Ytbqxf4MFjL/Pdu9mps5hvBKlG6a6dS0cMwTqFLUzqSlp7dnyocEpZoSFT4yF4ndF9i0isk6A="
+  secure: "Tr7lqnZzzogdr6TQm1NiskUYV2+AjQf1xXSnRQFRj032clGIC3L2ZrDlMRA6Ckd4uy+e0jSpd2yrE1AwZP92PeESNWa7VZLBHBfTgppAwWr+3DuEE4svtVQxKP8c6JfWFax0EYDT0Vu9Fg/E9wyxe6srYs4gmUtFAgiUPrmPJNu9G+aWRlyWuxVu0Z3DE/LerO+875jx3XJbBjCIto8s78W6rQcCSYzRa2O4PuGi7JJNA8mU89bxIzbRjWIq9MgjiM4GWZuZ/3M6TSgFzNZjjczxNZI8dH5gv9Q6f8dzHiQV2SaoITUO70LnnKWE1vgXqIMxwnBZqIdiqVALbQsLwzWcdNG1pCZEwmMdm58fjI2uN5U6fpgYa62aGdZgI5i1nP0fe+UtLdiW72MqOlSBb0DBi7/MJBBIjcDHSrwtypV4f9yQSkc93228skoO/LQ9vU2yANi7Bwany9QIN2sHTtNNrAZ710RLRHC+OHI/jTg3/5vKkkZtTqXFDhKhXfujO1infhIhePTQdohh7PvqbOmHR+tuepzY/3UAR5Jj906STjMmD6jOqhYVLYIO3V7Ts1LbVdhvjC6X0bChW5E3Xar7n+lrsD7tYMN+is64hL3saIjQGVCwlN3rASeCs37yrpM8dr+lLCbHQDtY1lecU1PfMtPbxPUB05W7y39uO5g="
+  secure: "KYwsBwWQ6Cd5/5syTuzAR4/DsZFG7dsarMbKXvRnLHkmI/EBtZooprXJEbwxQEG7xCnKRH58Ongqs4HJNTMWo/R5mS/F7u+mDjTQ2GUf8oulq2VbJrFe5yEdgFeNIOP93oXB4Zk4snM4rQ/uqjAWIfzbw5AtM3dStajSVIP/EbE+TcSDaTxLtCBYmU09lEgMoa2saVyLC2rZOtG8aK1b+tgMhBW1pmOzVwWQ5XglekYaZNRoF/a6hprkP6UaME94/AZS4qox9IWPN9sewP5+/DjvwnpgijgUaeMWF/+uItULOIPESlqnrjmhbNWX6X7aaO8AAelsKx7maF7CoBZoYYfHLuQqTug4zFJp+s/9qNy49PeVXWewP6euWir0EwSH5rtGonf9TrrSkd0QGEplHuoi5+SK7zq6Q8+kGNV45G2bv0XZCtEynPE8SGU/gL/1xKDlpVqmvk6JQVhYgxWgXpE1hYlKjIed83yLRcJxp/GvC/7esWM4wdjMObx+W7hu7Tx9DJT3SbnNzFlGjvNnZG7XJdR89HrTUOWiB2KZjPW8KvVkUFZ6g6qPzuDk5jIhXUHroyTh/DteKn6iuq0abs1Koen+0IdjnYypvDPUO3IGi94ABGnW/D+3OcOJJ/SIo32nGzF+7/ubntLpNNNKvXbgk/MIqJZWcliyMoDsV4o="
