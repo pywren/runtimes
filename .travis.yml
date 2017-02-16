@@ -37,7 +37,6 @@ install:
   - pip install https://github.com/ericmjonas/pywren.git
 
 
-  
 before_script:
   - export BUILD_GUID=`echo $TRAVIS_JOB_NUMBER | sed 's/\./_/g'`_$RANDOM_ID
   - echo CLEAN BUILD ID IS $BUILD_GUID
