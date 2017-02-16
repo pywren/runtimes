@@ -234,11 +234,13 @@ def package_all(s3url):
          local("aws s3 cp /tmp/condaruntime.tar.gz {}".format(s3url))
 
 
-@task
-def build_runtimes():
-    for runtime_name, v in runtimes.RUNTIMES.items():
-        python_ver = v[0]
-        execute(create_runtime, python_ver, v[1], v[2], v[3])
+def build_and_deploy_runtime(runtime_name, runtime_config):
+        python_ver = runtime_config['pythonver']
+        conda_install = runtime_config['conda_install']
+        pip_install = runtime_config['pip_install']
+        pip_upgrade = runtime_config['pip_upgrade']
+        execute(create_runtime, python_ver, conda_install,
+                pip_install, pip_upgrade)
         execute(shrink_conda, CONDA_INSTALL_DIR)
         freeze_str = execute(get_runtime_pip_freeze, CONDA_INSTALL_DIR)
         freeze_str_single = freeze_str.values()[0] # HACK 
@@ -247,11 +249,12 @@ def build_runtimes():
         
         conda_env_yaml = execute(get_conda_root_env, CONDA_INSTALL_DIR)
         conda_env_yaml_single = conda_env_yaml.values()[0]  # HACK
+        pickle.dump(conda_env_yaml_single, open("debug.pickle", 'w'))
         conda_env = yaml.load(conda_env_yaml_single)
         runtime_dict = {'python_ver' : python_ver, 
-                        'conda_install' : v[1], 
-                        'pip_install' : v[2], 
-                        'pip_upgrade' : v[3], 
+                        'conda_install' : conda_install,
+                        'pip_install' : pip_install, 
+                        'pip_upgrade' : pip_upgrade,
                         'pkg_ver_list' : freeze_pkgs, 
                         'conda_env_config': conda_env}
         
@@ -264,7 +267,12 @@ def build_runtimes():
             outfile.flush()
 
         local("aws s3 cp runtime.meta.json {}".format(runtime_meta_json))
-        
+
+@task
+def build_all_runtimes():
+    for runtime_name, rc in runtimes.RUNTIMES.items():
+        build_and_deploy_runtime(runtime_name, rc)
+
 
 @task
 def get_runtime_pip_freeze(conda_install_dir):
@@ -272,5 +280,5 @@ def get_runtime_pip_freeze(conda_install_dir):
 
 @task
 def get_conda_root_env(conda_install_dir):
-    return run("{}/bin/conda env export -n root".format(conda_install_dir))
+    return run("{}/bin/conda env export -n root 2>/dev/null".format(conda_install_dir))
 

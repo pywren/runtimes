@@ -15,18 +15,23 @@ PIP_DEFAULT_UPGRADE_LIST = ['cloudpickle', 'enum34']
 CONDA_ML_SET = ['scipy', 'pillow', 'cvxopt', 'scikit-learn']
 PIP_ML_SET = ['cvxpy', 'redis']
 
-RUNTIMES = {'minimal_2' : (2, CONDA_DEFAULT_LIST, 
-                         PIP_DEFAULT_LIST, 
-                         PIP_DEFAULT_UPGRADE_LIST),
-            'minimal_3' : (3, CONDA_DEFAULT_LIST, 
-                           PIP_DEFAULT_LIST, 
-                           PIP_DEFAULT_UPGRADE_LIST), 
-            'ml_2' : (2, CONDA_DEFAULT_LIST  + CONDA_ML_SET, 
-                      PIP_DEFAULT_LIST + PIP_ML_SET, 
-                      PIP_DEFAULT_UPGRADE_LIST),
-            'ml_3' : (3, CONDA_DEFAULT_LIST + CONDA_ML_SET, 
-                           PIP_DEFAULT_LIST + PIP_ML_SET, 
-                           PIP_DEFAULT_UPGRADE_LIST), 
+RUNTIMES = {'minimal_2' : {'pythonver' : 2, 
+                           'conda_install' : CONDA_DEFAULT_LIST, 
+                           'pip_install' : PIP_DEFAULT_LIST, 
+                           'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST}, 
+            'minimal_3' :  {'pythonver' : 3, 
+                            'conda_install' : CONDA_DEFAULT_LIST, 
+                            'pip_install' : PIP_DEFAULT_LIST, 
+                            'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST}, 
+            'ml_2' : {'pythonver' : 3, 
+                      'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET, 
+                      'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET, 
+                      'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST + PIP_DEFAULT_UPGRADE_LIST}, 
+            'ml_3' : {'pythonver' : 3, 
+                      'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET, 
+                      'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET, 
+                      'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST + PIP_DEFAULT_UPGRADE_LIST}, 
+
 
 }
 
