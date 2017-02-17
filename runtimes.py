@@ -31,6 +31,15 @@ RUNTIMES = {'minimal_2' : {'pythonver' : 2,
                       'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET, 
                       'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST + PIP_DEFAULT_UPGRADE_LIST}, 
 
+            'default_2' : {'pythonver' : 2, 
+                      'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET, 
+                      'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET, 
+                      'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST + PIP_DEFAULT_UPGRADE_LIST}, 
+            'default_3' : {'pythonver' : 3, 
+                      'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET, 
+                      'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET, 
+                      'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST + PIP_DEFAULT_UPGRADE_LIST}, 
+
 
 }
 
@@ -52,10 +61,18 @@ PIP_TEST_STRS = {"glob2" : "__import__('glob2')",
                  "redis" : "__import__('redis')"}
 
 
-S3URL_BASE = "s3://ericmjonas-public/pywren.runtime.staging"
+S3URL_STAGING_BASE = "s3://ericmjonas-public/pywren.runtime.staging"
 
 def get_staged_runtime_url(runtime_name, runtime_python_version):
+    s3url = "{}/pywren_runtime-{}-{}".format(S3URL_STAGING_BASE, 
+                                             runtime_python_version, runtime_name)
+
+    return  s3url + ".tar.gz", s3url + ".meta.json"
+
+S3URL_BASE = "s3://ericmjonas-public/pywren.runtime"
+
+def get_runtime_url(runtime_name, runtime_python_version):
     s3url = "{}/pywren_runtime-{}-{}".format(S3URL_BASE, 
                                              runtime_python_version, runtime_name)
 
-    return  s3url + ".tar.gz", s3url + "meta.json"
+    return  s3url + ".tar.gz", s3url + ".meta.json"

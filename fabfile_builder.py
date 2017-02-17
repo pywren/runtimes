@@ -234,7 +234,7 @@ def package_all(s3url):
          local("aws s3 cp /tmp/condaruntime.tar.gz {}".format(s3url))
 
 
-def build_and_deploy_runtime(runtime_name, runtime_config):
+def build_and_stage_runtime(runtime_name, runtime_config):
         python_ver = runtime_config['pythonver']
         conda_install = runtime_config['conda_install']
         pip_install = runtime_config['pip_install']
@@ -271,7 +271,7 @@ def build_and_deploy_runtime(runtime_name, runtime_config):
 @task
 def build_all_runtimes():
     for runtime_name, rc in runtimes.RUNTIMES.items():
-        build_and_deploy_runtime(runtime_name, rc)
+        build_and_stage_runtime(runtime_name, rc)
 
 
 @task
@@ -281,4 +281,24 @@ def get_runtime_pip_freeze(conda_install_dir):
 @task
 def get_conda_root_env(conda_install_dir):
     return run("{}/bin/conda env export -n root 2>/dev/null".format(conda_install_dir))
+
+def deploy_runtime(runtime_name, python_ver):
+    # move from staging to production
+    staging_runtime_tar_gz, staging_runtime_meta_json \
+        = runtimes.get_staged_runtime_url(runtime_name, python_ver)
+
+    runtime_tar_gz, runtime_meta_json = runtimes.get_runtime_url(runtime_name, 
+                                                                 python_ver)
+
+    local("aws s3 cp {} {}".format(staging_runtime_tar_gz, 
+                                   runtime_tar_gz))
+
+    local("aws s3 cp {} {}".format(staging_runtime_meta_json, 
+                                   runtime_meta_json))
+
+
+@task 
+def deploy_runtimes():
+    for runtime_name, rc in runtimes.RUNTIMES.items():
+          deploy_runtime(runtime_name, rc['pythonver'])
 
