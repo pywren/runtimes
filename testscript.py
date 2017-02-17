@@ -20,6 +20,7 @@ for runtime_name, runtime_config in runtimes.RUNTIMES.items():
         python_ver_major, python_ver_minor = python_ver.split(".")
         python_ver_major = int(python_ver_major)
         python_ver_minor = int(python_ver_minor)
+        packages = runtime_config['packages']
         # skip all of the ones not for this version of python. Someday we should
         # be smarter about this
         if sys.version_info.major == python_ver_major \
@@ -42,7 +43,7 @@ for runtime_name, runtime_config in runtimes.RUNTIMES.items():
                 results = {}
 
                 conda_results = {}
-                for pkg in runtime_config['conda_install']:
+                for pkg in packages['conda_install']:
                     if pkg in runtimes.CONDA_TEST_STRS:
                         test_str = runtimes.CONDA_TEST_STRS[pkg]
                         try:
@@ -55,7 +56,7 @@ for runtime_name, runtime_config in runtimes.RUNTIMES.items():
 
 
                 pip_results = {}
-                for pkg in runtime_config['pip_install'] + runtime_config['pip_upgrade']:
+                for pkg in packages['pip_install'] + packages['pip_upgrade']:
                     if pkg in runtimes.PIP_TEST_STRS:
                         test_str = runtimes.PIP_TEST_STRS[pkg]
                         try:
