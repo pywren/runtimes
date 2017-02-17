@@ -210,14 +210,15 @@ def create_runtime(pythonver,
     conda_pkg_str = " ".join(conda_packages)
     pip_pkg_str = " ".join(pip_packages)
     pip_pkg_upgrade_str = " ".join(pip_upgrade_packages)
+    python_base_ver = pythonver.split(".")[0]
     run("rm -Rf {}".format(CONDA_BUILD_DIR))
     run("mkdir -p {}".format(CONDA_BUILD_DIR))
     with cd(CONDA_BUILD_DIR):
-        run("wget https://repo.continuum.io/miniconda/Miniconda{}-latest-Linux-x86_64.sh -O miniconda.sh ".format(pythonver))
+        run("wget https://repo.continuum.io/miniconda/Miniconda{}-latest-Linux-x86_64.sh -O miniconda.sh ".format(python_base_ver))
         
         run("bash miniconda.sh -b -p {}".format(CONDA_INSTALL_DIR))
         with path("{}/bin".format(CONDA_INSTALL_DIR), behavior="prepend"):
-
+            run("conda install -q -y python={}".format(pythonver))
             run("conda install -q -y {}".format(conda_pkg_str))
             run("pip install {}".format(pip_pkg_str))
             run("pip install --upgrade {}".format(pip_pkg_upgrade_str))
@@ -271,7 +272,10 @@ def build_and_stage_runtime(runtime_name, runtime_config):
 @task
 def build_all_runtimes():
     for runtime_name, rc in runtimes.RUNTIMES.items():
-        build_and_stage_runtime(runtime_name, rc)
+        for pythonver in rc['pythonvers']:
+            rc2 = rc['packages'].copy()
+            rc2['pythonver'] = pythonver
+            build_and_stage_runtime(runtime_name, rc2)
 
 
 @task
@@ -300,5 +304,6 @@ def deploy_runtime(runtime_name, python_ver):
 @task 
 def deploy_runtimes():
     for runtime_name, rc in runtimes.RUNTIMES.items():
-          deploy_runtime(runtime_name, rc['pythonver'])
+        for pythonver in rc['pythonvers']:
+            deploy_runtime(runtime_name, pythonver)
 
