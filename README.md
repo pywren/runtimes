@@ -7,9 +7,12 @@ To build all the runtimes in `runtimes.py` on the aws machine
 fab -f fabfile_builder.py -R builder build_all_runtimes 
 ```
 
-To deploy them:
+To test, push the repo to github, which will trigger a travis build pointing
+at the staged runtimes. 
+
+To deploy them and shard them, do this:
 
 ```
-fab -f fabfile_builder.py -R builder deploy_runtimes
+fab -f fabfile_builder.py -R builder deploy_shard_runtimes
 ```
 

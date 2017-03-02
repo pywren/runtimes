@@ -8,7 +8,7 @@ CONDA_DEFAULT_LIST = ["tblib",
                       "PyYAML", 
                       "cython"]
 
-PIP_DEFAULT_LIST = ['glob2', 'boto']
+PIP_DEFAULT_LIST = ['glob2', 'boto', 'certifi']
 PIP_DEFAULT_UPGRADE_LIST = ['cloudpickle', 'enum34']
 
 CONDA_ML_SET = ['scipy', 'pillow', 'cvxopt', 'scikit-learn']
@@ -48,7 +48,8 @@ CONDA_TEST_STRS = {'numpy' : "__import__('numpy')",
                    "scikit-learn" : "__import__('sklearn')"}
 PIP_TEST_STRS = {"glob2" : "__import__('glob2')", 
                  "cvxpy" : "__import__('cvxpy')", 
-                 "redis" : "__import__('redis')"}
+                 "redis" : "__import__('redis')", 
+                 "certifi": "__import__('certifi')"}
 
 
 S3URL_STAGING_BASE = "s3://ericmjonas-public/pywren.runtime.staging"
