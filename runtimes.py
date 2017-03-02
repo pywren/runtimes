@@ -8,7 +8,7 @@ CONDA_DEFAULT_LIST = ["tblib",
                       "PyYAML", 
                       "cython"]
 
-PIP_DEFAULT_LIST = ['glob2', 'boto']
+PIP_DEFAULT_LIST = ['glob2', 'boto', 'certifi']
 PIP_DEFAULT_UPGRADE_LIST = ['cloudpickle', 'enum34']
 
 CONDA_ML_SET = ['scipy', 'pillow', 'cvxopt', 'scikit-learn']
