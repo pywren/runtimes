@@ -16,6 +16,7 @@ import json
 import runtimes
 import yaml
 import os
+import pywren
 
 tgt_ami = 'ami-7172b611'
 region = 'us-west-2'
@@ -306,4 +307,32 @@ def deploy_runtimes():
     for runtime_name, rc in runtimes.RUNTIMES.items():
         for pythonver in rc['pythonvers']:
             deploy_runtime(runtime_name, pythonver)
+
+@task 
+def deploy_shard_runtimes():
+    for runtime_name, rc in runtimes.RUNTIMES.items():
+        for python_ver in rc['pythonvers']:
+
+            staging_runtime_tar_gz, staging_runtime_meta_json \
+                = runtimes.get_staged_runtime_url(runtime_name, python_ver)
+
+
+            runtime_tar_gz, runtime_meta_json = runtimes.get_runtime_url(runtime_name, 
+                                                                         python_ver)
+
+
+            # meta is used infrequently
+            local("aws s3 cp {} {}".format(staging_runtime_meta_json, 
+                                           runtime_meta_json))
+
+
+            bucket_name, key = pywren.wrenutil.split_s3_url(runtime_tar_gz)
+            
+
+            for i in range(pywren.wrenconfig.MAX_S3_RUNTIME_SHARDS):
+                shard_key = pywren.wrenutil.get_s3_shard(key, i)
+                hash_s3_key = pywren.wrenutil.hash_s3_key(shard_key)
+                shard_url = "s3://{}/{}".format(bucket_name, hash_s3_key)
+                local("aws s3 cp {} {}".format(staging_runtime_tar_gz, 
+                                               shard_url))
 
