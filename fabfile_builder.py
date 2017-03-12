@@ -1,6 +1,4 @@
 """
-examples:
-
 fab -f fabfile_builer.py -R builder conda_setup_mkl conda_clean package_all
 
 
@@ -260,7 +258,7 @@ def build_and_stage_runtime(runtime_name, runtime_config):
                         'conda_env_config': conda_env}
         
         # Use a single url for staging
-        runtime_tar_gz, runtime_meta_json =
+        runtime_tar_gz, runtime_meta_json = \
             runtimes.get_staged_runtime_url(runtime_name, python_ver)
 
         urls = [runtime_tar_gz]

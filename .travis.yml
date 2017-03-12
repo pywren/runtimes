@@ -34,6 +34,7 @@ before_script:
 - pywren create_config --lambda_role=pywren_travis_test_$BUILD_GUID --function_name=pywren_travis_$BUILD_GUID
   --bucket_name=jonas-testbucket2 --sqs_queue=pywren_travis_$BUILD_GUID --standalone_name=pywren_travis_$BUILD_GUID
   --pythonver=$TRAVIS_PYTHON_VERSION
+- cat ~/.pywren_config
 - pywren create_role
 - sleep 10
 - pywren deploy_lambda
