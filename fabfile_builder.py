@@ -16,7 +16,6 @@ import json
 import runtimes
 import yaml
 import os
-import pywren
 
 tgt_ami = 'ami-7172b611'
 region = 'us-west-2'
@@ -260,8 +259,12 @@ def build_and_stage_runtime(runtime_name, runtime_config):
                         'pkg_ver_list' : freeze_pkgs, 
                         'conda_env_config': conda_env}
         
-        runtime_tar_gz, runtime_meta_json = runtimes.get_staged_runtime_url(runtime_name, 
-                                                                     python_ver)
+        # Use a single url for staging
+        runtime_tar_gz, runtime_meta_json =
+            runtimes.get_staged_runtime_url(runtime_name, python_ver)
+
+        urls = [runtime_tar_gz]
+        runtime_dict['urls'] = urls
 
         execute(package_all, runtime_tar_gz)
         with open('runtime.meta.json', 'w') as outfile:
@@ -303,36 +306,36 @@ def deploy_runtime(runtime_name, python_ver):
 
 
 @task 
-def deploy_runtimes():
+def deploy_runtimes(num_shards=10):
     for runtime_name, rc in runtimes.RUNTIMES.items():
         for pythonver in rc['pythonvers']:
-            deploy_runtime(runtime_name, pythonver)
-
-@task 
-def deploy_shard_runtimes():
-    for runtime_name, rc in runtimes.RUNTIMES.items():
-        for python_ver in rc['pythonvers']:
-
             staging_runtime_tar_gz, staging_runtime_meta_json \
                 = runtimes.get_staged_runtime_url(runtime_name, python_ver)
 
+            # Always upload to the base tar gz url.
+            base_tar_gz = get_runtime_url_from_staging(staging_runtime_tar_gz)
+            local("aws s3 cp {} {}".format(staging_runtime_tar_gz,
+                                           base_tar_gz))
 
-            runtime_tar_gz, runtime_meta_json = runtimes.get_runtime_url(runtime_name, 
-                                                                         python_ver)
-
-
-            # meta is used infrequently
-            local("aws s3 cp {} {}".format(staging_runtime_meta_json, 
-                                           runtime_meta_json))
-
-
-            bucket_name, key = pywren.wrenutil.split_s3_url(runtime_tar_gz)
-            
-
-            for i in range(pywren.wrenconfig.MAX_S3_RUNTIME_SHARDS):
-                shard_key = pywren.wrenutil.get_s3_shard(key, i)
-                hash_s3_key = pywren.wrenutil.hash_s3_key(shard_key)
+            runtime_meta_json = get_runtime_url_from_staging(staging_runtime_meta_json)
+            # If required, generate the shard urls and update metadata
+            if num_shards > 1:
+              meta_dict = json.load(staging_runtime_meta_json)
+              shard_urls = []
+              for shard_id in xrange(num_shards):
+                bucket_name, key = runtimes.split_s3_url(base_tar_gz)
+                shard_key = runtimes.get_s3_shard(key, shard_id)
+                hash_s3_key = runtimes.hash_s3_key(shard_key)
                 shard_url = "s3://{}/{}".format(bucket_name, hash_s3_key)
-                local("aws s3 cp {} {}".format(staging_runtime_tar_gz, 
+                local("aws s3 cp {} {}".format(base_tar_gz, 
                                                shard_url))
+                shard_urls.append(shard_url)
 
+              meta_dict['urls'].extend(shard_urls)
+              with open('runtime.meta.json', 'w') as outfile:
+                  json.dump(meta_dict, outfile)
+                  outfile.flush()
+              local("aws s3 cp runtime.meta.json {}".format(runtime_meta_json))
+            else:
+              local("aws s3 cp {} {}".format(staging_runtime_meta_json,
+                                             runtime_meta_json))

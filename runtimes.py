@@ -51,19 +51,42 @@ PIP_TEST_STRS = {"glob2" : "__import__('glob2')",
                  "redis" : "__import__('redis')", 
                  "certifi": "__import__('certifi')"}
 
-
-S3URL_STAGING_BASE = "s3://ericmjonas-public/pywren.runtime.staging"
+S3_BUCKET = "s3://ericmjonas-public"
+S3URL_STAGING_BASE = S3_BUCKET + "/pywren.runtime.staging"
+S3URL_BASE = S3_BUCKET + "/pywren.runtime"
 
 def get_staged_runtime_url(runtime_name, runtime_python_version):
     s3url = "{}/pywren_runtime-{}-{}".format(S3URL_STAGING_BASE, 
                                              runtime_python_version, runtime_name)
 
-    return  s3url + ".tar.gz", s3url + ".meta.json"
+    return s3url + ".tar.gz", s3url + ".meta.json"
 
-S3URL_BASE = "s3://ericmjonas-public/pywren.runtime"
+def get_runtime_url_from_staging(staging_url):
+    s3_url_base, s3_filename = os.path.split(staging_url)
+    release_url = "{}/{}".format(S3URL_BASE, s3_filename)
 
-def get_runtime_url(runtime_name, runtime_python_version):
-    s3url = "{}/pywren_runtime-{}-{}".format(S3URL_BASE, 
-                                             runtime_python_version, runtime_name)
+    return release_url
 
-    return  s3url + ".tar.gz", s3url + ".meta.json"
+def hash_s3_key(s):
+    """
+    MD5-hash the contents of an S3 key to enable good partitioning.
+    used for sharding the runtimes
+    """
+    DIGEST_LEN = 6
+    m = hashlib.md5()
+    m.update(s.encode('ascii'))
+    digest = m.hexdigest()
+    return "{}-{}".format(digest[:DIGEST_LEN], s)
+
+def get_s3_shard(key, shard_num):
+    return "{}.{:04d}".format(key, shard_num)
+
+def split_s3_url(s3_url):
+    if s3_url[:5] != "s3://":
+        raise ValueError("URL {} is not valid".format(s3_url))
+
+
+    splits = s3_url[5:].split("/")
+    bucket_name = splits[0]
+    key = "/".join(splits[1:])
+    return bucket_name, key
