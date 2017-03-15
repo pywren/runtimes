@@ -13,6 +13,6 @@ at the staged runtimes.
 To deploy them and shard them, do this:
 
 ```
-fab -f fabfile_builder.py -R builder deploy_shard_runtimes:num_shards=50
+fab -f fabfile_builder.py -R builder deploy_runtimes:num_shards=50
 ```
 

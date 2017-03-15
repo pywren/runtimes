@@ -1,3 +1,5 @@
+import os
+import hashlib
 
 CONDA_DEFAULT_LIST = ["tblib", 
                       "numpy", 
