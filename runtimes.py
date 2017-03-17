@@ -12,7 +12,7 @@ PIP_DEFAULT_LIST = ['glob2', 'boto', 'certifi']
 PIP_DEFAULT_UPGRADE_LIST = ['cloudpickle', 'enum34']
 
 CONDA_ML_SET = ['scipy', 'pillow', 'cvxopt', 'scikit-learn']
-PIP_ML_SET = ['cvxpy', 'redis']
+PIP_ML_SET = ['cvxpy', 'gym', 'atari-py', 'mujoco-py']
 
 RUNTIMES = {'minimal' : {'pythonvers' : ["2.7", "3.5", "3.6"],  
                          'packages' : { 
@@ -51,7 +51,7 @@ PIP_TEST_STRS = {"glob2" : "__import__('glob2')",
                  "redis" : "__import__('redis')", 
                  "certifi": "__import__('certifi')"}
 
-S3_BUCKET = "s3://ericmjonas-public"
+S3_BUCKET = "s3://vaishaalpywren"
 S3URL_STAGING_BASE = S3_BUCKET + "/pywren.runtime.staging"
 S3URL_BASE = S3_BUCKET + "/pywren.runtime"
 
