@@ -68,61 +68,6 @@ def ssh():
     local("ssh -A " + env.host_string)
 
 @task 
-def openblas():
-    sudo("sudo yum install -q -y git gcc g++ gfortran libgfortran")
-    with path("/tmp/conda/condaruntime/bin", behavior="prepend"):
-        with cd("/tmp/conda"):
-            run("rm -Rf openblas-build")
-            run("mkdir openblas-build")
-            with cd('openblas-build'):
-                run('git clone https://github.com/xianyi/OpenBLAS.git')
-                with cd('OpenBLAS'):
-                    run('make -j4')
-                    run('make install PREFIX=/tmp/conda/condaruntime/openblas-install')
-
-@task
-def conda_setup_mkl():
-    run("rm -Rf /tmp/conda")
-    run("mkdir -p /tmp/conda")
-    with cd("/tmp/conda"):
-        run("wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh ")
-        run("bash miniconda.sh -b -p /tmp/conda/condaruntime")
-        with path("/tmp/conda/condaruntime/bin", behavior="prepend"):
-            run("conda install -q -y numpy enum34 pytest Click numba boto3 PyYAML cython")
-            run("conda list")
-            run("pip install --upgrade cloudpickle")
-            run("rm -Rf /tmp/conda/condaruntime/pkgs/mkl-11.3.3-0/*")
-            with cd("/tmp/conda/condaruntime/lib"):
-                run("rm *_mc.so *_mc2.so *_mc3.so *_avx512* *_avx2*")
-            
-@task
-def conda_setup_mkl_avx2(pythonver=2):
-    run("rm -Rf /tmp/conda")
-    run("mkdir -p /tmp/conda")
-    with cd("/tmp/conda"):
-        run("wget https://repo.continuum.io/miniconda/Miniconda{}-latest-Linux-x86_64.sh -O miniconda.sh ".format(pythonver))
-        run("bash miniconda.sh -b -p /tmp/conda/condaruntime")
-        with path("/tmp/conda/condaruntime/bin", behavior="prepend"):
-            run("conda install -q -y numpy pytest Click numba boto3 PyYAML cython boto scipy pillow cvxopt scikit-learn tblib")
-            run("conda list")
-            #run("conda clean -y -i -t -p")
-            run("pip install --upgrade cloudpickle enum34")
-            run("pip install cvxpy")
-            run("pip install redis")
-            run("pip install glob2")
-            
-@task
-def conda_setup_minimal():
-    run("rm -Rf /tmp/conda")
-    run("mkdir -p /tmp/conda")
-    with cd("/tmp/conda"):
-        run("wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh ")
-        run("bash miniconda.sh -b -p /tmp/conda/condaruntime")
-        with path("/tmp/conda/condaruntime/bin", behavior="prepend"):
-            run("conda install -q -y nomkl numpy boto3 boto") # Numpy is required
-            
-
-@task 
 def install_gist():
     """
     https://github.com/yuichiroTCY/lear-gist-python
@@ -144,32 +89,6 @@ def install_gist():
 def shrink_conda(CONDA_RUNTIME_DIR):
     put("shrinkconda.py")
     run("python shrinkconda.py {}".format(CONDA_RUNTIME_DIR))
-
-@task
-def numpy():
-    """
-    http://stackoverflow.com/questions/11443302/compiling-numpy-with-openblas-integration
-
-    """
-    with path("/tmp/conda/condaruntime/bin", behavior="prepend"):
-        # git clone
-        run("rm -Rf /tmp/conda/numpy")
-        with cd("/tmp/conda"):
-            run("git clone https://github.com/numpy/numpy")
-            with cd("numpy"):
-                run("cp site.cfg.example site.cfg")
-        
-                config = """
-                [openblas]
-                libraries = openblas
-                library_dirs = /tmp/conda/condaruntime/openblas-install/lib
-                include_dirs = /tmp/conda/condaruntime/openblas-install/install
-                runtime_library_dirs = /tmp/conda/condaruntime/openblas-install/lib
-                """
-                for l in config.split("\n"):
-                    run("echo '{}' >> {}".format(l.strip(), 'site.cfg'))
-                run("python setup.py config") # check this output
-                run("pip install .")
 
 @task
 def terminate():
