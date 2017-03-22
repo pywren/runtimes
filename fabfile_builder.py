@@ -115,8 +115,7 @@ def deploy():
         
 
 CONDA_BUILD_DIR = "/tmp/conda"
-CONDA_RUNTIME_DIR = "condaruntime"
-CONDA_INSTALL_DIR = os.path.join(CONDA_BUILD_DIR, CONDA_RUNTIME_DIR)
+CONDA_INSTALL_DIR = "/tmp/condaruntime"
 
 
 def create_runtime(pythonver, 
@@ -136,6 +135,7 @@ def create_runtime(pythonver,
     pip_pkg_upgrade_str = " ".join(pip_upgrade_packages)
     python_base_ver = pythonver.split(".")[0]
     run("rm -Rf {}".format(CONDA_BUILD_DIR))
+    run("rm -Rf {}".format(CONDA_INSTALL_DIR))
     run("mkdir -p {}".format(CONDA_BUILD_DIR))
     with cd(CONDA_BUILD_DIR):
         run("wget https://repo.continuum.io/miniconda/Miniconda{}-latest-Linux-x86_64.sh -O miniconda.sh ".format(python_base_ver))
@@ -155,10 +155,12 @@ def format_freeze_str(x):
 
 @task
 def package_all(s3url):
+    with cd(CONDA_INSTALL_DIR + "/../"):
+        run("tar czf {} condaruntime".format(os.path.join(CONDA_BUILD_DIR, 'condaruntime.tar.gz')))
+            
     with cd(CONDA_BUILD_DIR):
-         run("tar czf condaruntime.tar.gz {}".format(CONDA_RUNTIME_DIR))
-         get("condaruntime.tar.gz", local_path="/tmp/condaruntime.tar.gz")
-         local("aws s3 cp /tmp/condaruntime.tar.gz {}".format(s3url))
+        get("condaruntime.tar.gz", local_path="/tmp/condaruntime.tar.gz")
+        local("aws s3 cp /tmp/condaruntime.tar.gz {}".format(s3url))
 
 
 def build_and_stage_runtime(runtime_name, runtime_config):
@@ -211,6 +213,12 @@ def build_all_runtimes():
             rc2['pythonver'] = pythonver
             build_and_stage_runtime(runtime_name, rc2)
 
+@task 
+def build_single_runtime(runtime_name, pythonver):
+    rc = runtimes.RUNTIMES[runtime_name]
+    rc2 = rc['packages'].copy()
+    rc2['pythonver'] = pythonver
+    build_and_stage_runtime(runtime_name, rc2)
 
 @task
 def get_runtime_pip_freeze(conda_install_dir):
