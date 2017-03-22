@@ -204,8 +204,15 @@ def create_runtime(pythonver,
                    conda_packages, pip_packages, 
                    pip_upgrade_packages):
     
-
-    conda_pkg_str = " ".join(conda_packages)
+    conda_pkgs_default_channel = []
+    conda_pkgs_custom_channel = []
+    for c in conda_packages:
+        if isinstance(c, tuple):
+            conda_pkgs_custom_channel.append(c)
+        else:
+            conda_pkgs_default_channel.append(c)
+            
+    conda_default_pkg_str = " ".join(conda_pkgs_default_channel)
     pip_pkg_str = " ".join(pip_packages)
     pip_pkg_upgrade_str = " ".join(pip_upgrade_packages)
     python_base_ver = pythonver.split(".")[0]
@@ -217,7 +224,9 @@ def create_runtime(pythonver,
         run("bash miniconda.sh -b -p {}".format(CONDA_INSTALL_DIR))
         with path("{}/bin".format(CONDA_INSTALL_DIR), behavior="prepend"):
             run("conda install -q -y python={}".format(pythonver))
-            run("conda install -q -y {}".format(conda_pkg_str))
+            run("conda install -q -y {}".format(conda_default_pkg_str))
+            for chan, pkg in conda_pkgs_custom_channel:
+                run("conda install -q -y -c {} {}".format(chan, pkg))
             run("pip install {}".format(pip_pkg_str))
             run("pip install --upgrade {}".format(pip_pkg_upgrade_str))
 
@@ -245,7 +254,10 @@ def build_and_stage_runtime(runtime_name, runtime_config):
         freeze_str_single = freeze_str.values()[0] # HACK 
 
         freeze_pkgs = format_freeze_str(freeze_str_single)
-        
+
+        preinstalls_str = execute(get_preinstalls, CONDA_INSTALL_DIR)
+        preinstalls_str_single = preinstalls_str.values()[0]
+        preinstalls = json.loads(preinstalls_str_single)
         conda_env_yaml = execute(get_conda_root_env, CONDA_INSTALL_DIR)
         conda_env_yaml_single = conda_env_yaml.values()[0]  # HACK
         pickle.dump(conda_env_yaml_single, open("debug.pickle", 'w'))
@@ -254,7 +266,8 @@ def build_and_stage_runtime(runtime_name, runtime_config):
                         'conda_install' : conda_install,
                         'pip_install' : pip_install, 
                         'pip_upgrade' : pip_upgrade,
-                        'pkg_ver_list' : freeze_pkgs, 
+                        'pkg_ver_list' : freeze_pkgs,
+                        'preinstalls' : preinstalls, 
                         'conda_env_config': conda_env}
         
         # Use a single url for staging
@@ -283,6 +296,11 @@ def build_all_runtimes():
 @task
 def get_runtime_pip_freeze(conda_install_dir):
     return run("{}/bin/pip freeze 2>/dev/null".format(conda_install_dir))
+
+@task
+def get_preinstalls(conda_install_dir):
+    return run('{}/bin/python -c "import pkgutil;import json;print(json.dumps([(mod, is_pkg) for _, mod, is_pkg in pkgutil.iter_modules()]))"'.format(conda_install_dir))
+
 
 @task
 def get_conda_root_env(conda_install_dir):

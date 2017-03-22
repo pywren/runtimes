@@ -1,6 +1,7 @@
 import os
 import hashlib
 
+
 CONDA_DEFAULT_LIST = ["tblib", 
                       "numpy", 
                       "pytest", 
@@ -8,13 +9,17 @@ CONDA_DEFAULT_LIST = ["tblib",
                       "numba", 
                       "boto3", 
                       "PyYAML", 
-                      "cython"]
+                      'six',
+                      "cython", 'future']
 
 PIP_DEFAULT_LIST = ['glob2', 'boto', 'certifi']
 PIP_DEFAULT_UPGRADE_LIST = ['cloudpickle', 'enum34']
 
 CONDA_ML_SET = ['scipy', 'pillow', 'cvxopt', 'scikit-learn']
 PIP_ML_SET = ['cvxpy', 'redis']
+
+CONDA_OPT_SET = ['scipy', 'cvxopt', ('mosek', 'mosek')]
+PIP_OPT_SET = ['cvxpy' ]
 
 RUNTIMES = {'minimal' : {'pythonvers' : ["2.7", "3.5", "3.6"],  
                          'packages' : { 
@@ -25,13 +30,17 @@ RUNTIMES = {'minimal' : {'pythonvers' : ["2.7", "3.5", "3.6"],
                     'packages' : {
                         'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET, 
                         'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET, 
-                        'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST + PIP_DEFAULT_UPGRADE_LIST}},
+                        'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST }},
             'default' : {'pythonvers' : ["2.7", "3.5", "3.6"], 
                          'packages' : {
                              'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET, 
                              'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET, 
-                             'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST + PIP_DEFAULT_UPGRADE_LIST}}
-
+                             'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST}}, 
+            'opt' : {'pythonvers' : ["2.7"], 
+                         'packages' : {
+                             'conda_install' : CONDA_DEFAULT_LIST + CONDA_OPT_SET, 
+                             'pip_install' : PIP_DEFAULT_LIST + PIP_OPT_SET, 
+                             'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST }}
 
 }
 
