@@ -264,7 +264,7 @@ def deploy_runtimes(num_shards=10):
             runtime_meta_json_url = runtimes.get_runtime_url_from_staging(staging_runtime_meta_json)
             # If required, generate the shard urls and update metadata
             if num_shards > 1:
-                local("aws s3 cp {} runtime.meta.json".format(runtime_meta_json_url))
+                local("aws s3 cp {} runtime.meta.json".format(staging_runtime_meta_json))
                 meta_dict = json.load(open('runtime.meta.json', 'r'))
                 shard_urls = []
                 for shard_id in xrange(num_shards):
