@@ -39,7 +39,7 @@ with measure("delete non-avx2 mkl"):
         for f in glob2.glob(CONDA_RUNTIME + "/lib/" + g):
             print "removing", f
             os.remove(f)
-    shutil.rmtree("/tmp/conda/condaruntime/pkgs/mkl-11.3.3-0/", ignore_errors=True)
+    shutil.rmtree("{}/pkgs/mkl-11.3.3-0/".format(CONDA_RUNTIME), ignore_errors=True)
     print "after extra lib removal", get_size()
 
 with measure("strip shared libs (gcc)"):

@@ -119,7 +119,7 @@ CONDA_INSTALL_DIR = "/tmp/condaruntime"
 
 
 def create_runtime(pythonver, 
-                   conda_packages, pip_packages, 
+                   conda_packages, conda_force_packages, pip_packages, 
                    pip_upgrade_packages):
     
     conda_pkgs_default_channel = []
@@ -146,6 +146,8 @@ def create_runtime(pythonver,
             run("conda install -q -y {}".format(conda_default_pkg_str))
             for chan, pkg in conda_pkgs_custom_channel:
                 run("conda install -q -y -c {} {}".format(chan, pkg))
+            for pkg in conda_force_packages:
+                run("conda install -q -y --force {}".format(pkg))
             run("pip install {}".format(pip_pkg_str))
             run("pip install --upgrade {}".format(pip_pkg_upgrade_str))
 
@@ -166,10 +168,13 @@ def package_all(s3url):
 def build_and_stage_runtime(runtime_name, runtime_config):
         python_ver = runtime_config['pythonver']
         conda_install = runtime_config['conda_install']
+        conda_force = runtime_config['conda_force']
+
         pip_install = runtime_config['pip_install']
         pip_upgrade = runtime_config['pip_upgrade']
-        execute(create_runtime, python_ver, conda_install,
+        execute(create_runtime, python_ver, conda_install, conda_force, 
                 pip_install, pip_upgrade)
+
         execute(shrink_conda, CONDA_INSTALL_DIR)
         freeze_str = execute(get_runtime_pip_freeze, CONDA_INSTALL_DIR)
         freeze_str_single = freeze_str.values()[0] # HACK 
@@ -249,9 +254,14 @@ def deploy_runtime(runtime_name, python_ver):
 
 
 @task 
-def deploy_runtimes(num_shards=10):
+def deploy_runtimes(num_shards=10, runtime_name=None):
     num_shards = int(num_shards)
-    for runtime_name, rc in runtimes.RUNTIMES.items():
+    if runtime_name is None:
+        runtimes_to_use = runtimes.RUNTIMES 
+    else:
+        runtimes_to_use = {runtime_name : runtimes.RUNTIMES[runtime_name]}
+
+    for runtime_name, rc in runtimes_to_use.items():
         for python_ver in rc['pythonvers']:
             staging_runtime_tar_gz, staging_runtime_meta_json \
                 = runtimes.get_staged_runtime_url(runtime_name, python_ver)
