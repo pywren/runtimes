@@ -40,6 +40,18 @@ RUNTIMES = {'minimal' : {'pythonvers' : ["2.7", "3.5", "3.6"],
                          'packages' : {
                              'conda_install' : CONDA_DEFAULT_LIST + CONDA_OPT_SET, 
                              'pip_install' : PIP_DEFAULT_LIST + PIP_OPT_SET, 
+                             'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST }}, 
+
+            'solar' : {'pythonvers' : ["2.7"], 
+                         'packages' : {
+                             'conda_install' : CONDA_DEFAULT_LIST + ['astropy'],
+                             'pip_install' : PIP_DEFAULT_LIST, 
+                             'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST }},
+            'solartest' : {'pythonvers' : ["2.7"], 
+                         'packages' : {
+                             'conda_install' : CONDA_DEFAULT_LIST + ['astropy', 'pyparsing', 'cycler', 'scipy'],
+                             'conda_force' : ['scikit-image', 'matplotlib'], 
+                             'pip_install' : PIP_DEFAULT_LIST, 
                              'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST }}
 
 }
