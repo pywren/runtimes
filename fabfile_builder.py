@@ -24,8 +24,6 @@ DEFAULT_UNIQUE_INSTANCE_NAME = 'pywren_builder'
 DEFAULT_EC2_KEY_NAME='ec2-us-west-2'
 DEFAULT_INSTANCE_TYPE='m4.large'
 
-s3url = "s3://ericmjonas-public/condaruntime.python3.stripped.scipy-cvxpy-sklearn.mkl_avx2.tar.gz"
-
 # this is our temporary working directory where we store build artifacts
 # and downloaded code 
 CONDA_BUILD_DIR = "/tmp/conda" 
@@ -178,6 +176,7 @@ def create_runtime_package_metadata(conda_install_dir):
     python_ver_str = execute(get_runtime_python_ver, conda_install_dir)
     python_ver = python_ver_str.values()[0] # HACK 
     python_ver = python_ver.split(" ")[1]
+    python_ver = ".".join(python_ver.split(".")[:2])
 
     freeze_str = execute(get_runtime_pip_freeze, conda_install_dir)
     freeze_str_single = freeze_str.values()[0] # HACK 
@@ -234,13 +233,14 @@ def deploy_runtime_urls(runtime_tar_s3_url, runtime_meta_s3_url,
 @task 
 def deploy_runtime(s3_url_base, runtime_config_filename):
 
-    runtime_config = runtimes.load_runtime_config(config)
+    runtime_config = runtimes.load_runtime_config(runtime_config_filename)
 
     runtime_tar_s3_url = s3_url_base + ".tar.gz"
     runtime_meta_s3_url = s3_url_base + ".meta.json"
 
     deploy_runtime_urls(runtime_tar_s3_url, runtime_meta_s3_url, 
                         runtime_config)
+    return runtime_tar_s3_url, runtime_meta_s3_url
 
 @task
 def shard_runtime(s3_url_base_source, s3_url_base_dest, 
@@ -260,6 +260,8 @@ def shard_runtime(s3_url_base_source, s3_url_base_dest,
         shard_key = runtimes.get_s3_shard(key, shard_id)
         hash_s3_key = runtimes.hash_s3_key(shard_key)
         shard_url = "s3://{}/{}".format(bucket_name, hash_s3_key)
+        # FIXME we should do this directly calling boto and executing a bunch
+        # of tasks in parallel
         local("aws s3 cp {} {}".format(runtime_tar_s3_url, 
                                        shard_url))
         shard_urls.append(shard_url)
