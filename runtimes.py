@@ -1,6 +1,7 @@
 import os
 import hashlib
-
+import yaml
+import copy
 
 CONDA_DEFAULT_LIST = ["tblib", 
                       "numpy", 
@@ -78,17 +79,6 @@ S3_BUCKET = "s3://ericmjonas-public"
 S3URL_STAGING_BASE = S3_BUCKET + "/pywren.runtime.staging"
 S3URL_BASE = S3_BUCKET + "/pywren.runtime"
 
-def get_staged_runtime_url(runtime_name, runtime_python_version):
-    s3url = "{}/pywren_runtime-{}-{}".format(S3URL_STAGING_BASE, 
-                                             runtime_python_version, runtime_name)
-
-    return s3url + ".tar.gz", s3url + ".meta.json"
-
-def get_runtime_url_from_staging(staging_url):
-    s3_url_base, s3_filename = os.path.split(staging_url)
-    release_url = "{}/{}".format(S3URL_BASE, s3_filename)
-
-    return release_url
 
 def hash_s3_key(s):
     """
@@ -113,3 +103,49 @@ def split_s3_url(s3_url):
     bucket_name = splits[0]
     key = "/".join(splits[1:])
     return bucket_name, key
+
+def merge_runtime_configs(config_list):
+
+    dest_rc = copy.deepcopy(config_list[0])
+    if 'conda' not in dest_rc:
+        dest_rc['conda'] = {}
+    if 'install' not in dest_rc['conda']:
+        dest_rc['conda']['install'] = []
+    if 'force' not in dest_rc['conda']:
+        dest_rc['conda']['force'] = []
+
+    if 'pip' not in dest_rc:
+        dest_rc['pip'] = {}
+    if 'install' not in dest_rc['pip']:
+        dest_rc['pip']['install'] = []
+    if 'upgrade' not in dest_rc['pip']:
+        dest_rc['pip']['upgrade'] = []
+    if 'extracmds' not in dest_rc:
+        dest_rc['extracmds'] = []
+
+    
+    for c in config_list[1:]:
+        if 'conda' in c:
+            print dest_rc['conda']['install'], c['conda'].get('install', [])
+            dest_rc['conda']['install'] += c['conda'].get('install', [])
+            dest_rc['conda']['force'] += c['conda'].get('force', [])
+        if 'pip' in c:
+            dest_rc['pip']['install'] += c['pip'].get('install', [])
+            dest_rc['pip']['upgrade'] += c['pip'].get('upgrade', [])
+        dest_rc['extracmds'] += c.get('extracmds', [])
+
+    return dest_rc
+
+def load_runtime_config(filename):
+    runtime_config = yaml.load(open(filename, 'r'))
+    # merge any includes
+    all_configs = [runtime_config]
+    for include_file in runtime_config.get('include', []):
+        include_dir = os.path.dirname(filename)
+        include_path = os.path.join(include_dir, include_file)
+
+        included_config = load_runtime_config(include_path)
+        all_configs.append(included_config)
+    runtime_config_agg = merge_runtime_configs(all_configs)
+
+    return runtime_config_agg

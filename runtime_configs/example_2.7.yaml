@@ -1,0 +1,26 @@
+pythonver: 2.7
+miniconda_url: https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh
+conda:
+    install: # run conda install foo. To install from a custom channel use [channel, package]
+        - tblib
+        - numpy
+        - pytest
+        - Click
+        - boto3
+        - PyYAML
+        - six
+        - cython
+        - future
+    force: # force install, does not bring along dependencies
+        - scikit-image
+        - matplotlib
+pip:
+    install:
+        - glob2
+        - boto
+    upgrade:
+        - cloudpickle
+        - enum34
+
+extracmds:
+  - "ls -lah"
