@@ -16,9 +16,11 @@ import yaml
 import os
 import copy
 from shrinkruntime import * 
+from multiprocessing.pool import ThreadPool
 
 
 DEFAULT_TGT_AMI = 'ami-7172b611'
+GPU_TGT_AMI='ami-dfb13ebf'
 DEFAULT_REGION = 'us-west-2'
 DEFAULT_UNIQUE_INSTANCE_NAME = 'pywren_builder'
 DEFAULT_EC2_KEY_NAME='ec2-us-west-2'
@@ -32,19 +34,22 @@ CONDA_INSTALL_DIR = "/tmp/condaruntime"
 
 
 def tags_to_dict(d):
+    if d is None or len(d) == 0:
+        return {}
     return {a['Key'] : a['Value'] for a in d}
 
-def get_target_instance(region_name, unique_instance_name):
+def get_target_instance(region_name, unique_instance_name, 
+                        rolename='builder'):
     res = []
     ec2 = boto3.resource('ec2', region_name=region_name)
 
     for i in ec2.instances.all():
         if i.state['Name'] == 'running':
             d = tags_to_dict(i.tags)
-            if d['Name'] == unique_instance_name:
+            if d is not None and d.get('Name', "") == unique_instance_name:
                 res.append('ec2-user@{}'.format(i.public_dns_name))
-    print "found", res
-    return {'builder' : res}
+
+    return {rolename : res}
 
 env.roledefs.update(get_target_instance(DEFAULT_REGION, 
                                         DEFAULT_UNIQUE_INSTANCE_NAME))
@@ -253,24 +258,50 @@ def shard_runtime(s3_url_base_source, s3_url_base_dest,
     assert meta_dict['urls'][0] == runtime_tar_s3_url
     
     # generate the URLs
+    source_bucket_name, source_key_name = runtimes.split_s3_url(runtime_tar_s3_url)
+    dest_bucket_name, dest_key_name  = runtimes.split_s3_url(s3_url_base_dest)
+    dest_key_tar_gz = dest_key_name + ".tar.gz"
+
+    s3 = boto3.resource('s3')
     
+    dest_loc_info = s3.meta.client.get_bucket_location(Bucket=dest_bucket_name)
+    dest_region = dest_loc_info['LocationConstraint']
+    if dest_region is None:
+        dest_region = 'us-west-1'
+
+
+    def copy_s3(source_bucket, source_key, 
+             dest_bucket, dest_key):
+        print "copying", "s3://{}/{}".format(source_bucket, source_key), "to", "s3://{}/{}".format(dest_bucket, dest_key)
+
+        copy_source = {
+            'Bucket': source_bucket,
+            'Key': source_key, 
+        }
+        s3.meta.client.copy(copy_source, dest_bucket, dest_key)
+        
+    pool = ThreadPool(16)
+
     shard_urls = []
     for shard_id in xrange(int(num_shards)):
-        bucket_name, key = runtimes.split_s3_url(runtime_tar_s3_url)
-        shard_key = runtimes.get_s3_shard(key, shard_id)
+
+        shard_key = runtimes.get_s3_shard(dest_key_tar_gz, shard_id)
         hash_s3_key = runtimes.hash_s3_key(shard_key)
-        shard_url = "s3://{}/{}".format(bucket_name, hash_s3_key)
-        # FIXME we should do this directly calling boto and executing a bunch
-        # of tasks in parallel
-        local("aws s3 cp {} {}".format(runtime_tar_s3_url, 
-                                       shard_url))
+        shard_url = "s3://{}/{}".format(dest_bucket_name, hash_s3_key)
+        
+        pool.apply_async(copy_s3, args=(source_bucket_name, source_key_name, 
+                                        dest_bucket_name, hash_s3_key))
+
         shard_urls.append(shard_url)
-    print shard_urls
+
+    pool.close()
+    pool.join()
     meta_dict['urls'] = shard_urls
     with open('runtime.meta.json', 'w') as outfile:
         json.dump(meta_dict, outfile)        
         outfile.flush()
 
-    local("aws s3 cp runtime.meta.json {}".format(s3_url_base_dest + ".meta.json"))
+    local("aws s3 cp runtime.meta.json --region={} {}".format(dest_region, 
+                                                              s3_url_base_dest + ".meta.json"))
 
 

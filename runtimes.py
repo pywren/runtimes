@@ -138,6 +138,10 @@ def merge_runtime_configs(config_list):
 
 def load_runtime_config(filename):
     runtime_config = yaml.load(open(filename, 'r'))
+    pythonver = runtime_config['pythonver']
+    if not isinstance(pythonver, str):
+        raise Exception("pythonver must be a string, not a {}".format(type(pythonver)))
+
     # merge any includes
     all_configs = [runtime_config]
     for include_file in runtime_config.get('include', []):

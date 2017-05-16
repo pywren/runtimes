@@ -8,7 +8,8 @@ import runtimes
 
 # create anaconda environments for the supported python versions
 
-CONFIG_FILES = ['default_2.7.yaml']
+CONFIG_FILES = ['minimal_2.7.yaml', 'minimal_3.6.yaml', 'tf_cpu_2.7.yaml', 
+                'default_2.7.yaml', 'default_3.5.yaml']
 BUILD_WORKING = "build.working"
 
 AWS_REGION = 'us-west-2'
@@ -136,7 +137,7 @@ BUCKETS = ['pywren-public-us-west-1',
            'pywren-public-us-west-2', 
            'pywren-public-us-east-2']
 
-NUM_SHARDS = 50
+NUM_SHARDS = 100
 
 @transform(check_runtime, suffix(".success.pickle"), ".deploy.pickle")
 def shard_runtime(infile, outfile):
@@ -152,7 +153,8 @@ def shard_runtime(infile, outfile):
         print OUT_URL
         execute(fabfile_builder.shard_runtime, s3_url_base_source, OUT_URL, 
                 NUM_SHARDS)
-
+    pickle.dump({'num_shards' : NUM_SHARDS}, 
+                open(outfile, 'w'))
 
 if __name__ == "__main__":
     pipeline_run([build_runtime, 

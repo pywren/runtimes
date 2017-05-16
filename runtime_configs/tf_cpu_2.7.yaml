@@ -1,0 +1,19 @@
+pythonver: '2.7'
+miniconda_url: https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh
+include:
+  - minimal_2.7.yaml
+conda:
+    install:
+      - numpy
+pip:
+    install:
+      - glob2
+      - boto
+    upgrade:
+      - cloudpickle
+      - enum34
+
+extracmds:
+  - "pip install --upgrade --no-deps  https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.0.1-cp27-none-linux_x86_64.whl"
+  - "pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.0.1-cp27-none-linux_x86_64.whl"  # will install numpy 1.12.1 ?
+# numpy                     1.12.1                   py27_0
