@@ -93,3 +93,4 @@ fab -f fabfile_builder.py -R builder ssh
 fab -f fabfile_builder.py -R builder build_runtime:config=runtime_configs/default_2.7.yaml 
 fab -f fabfile_builder.py -R builder shrink_runtime
 fab -f fabfile_builder.py -R builder deploy_runtime:s3_url_base=s3://ericmjonas-public/test-pywren-runtime 
+```

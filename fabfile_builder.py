@@ -19,12 +19,18 @@ from shrinkruntime import *
 from multiprocessing.pool import ThreadPool
 
 
-DEFAULT_TGT_AMI = 'ami-7172b611'
-GPU_TGT_AMI='ami-dfb13ebf'
-DEFAULT_REGION = 'us-west-2'
-DEFAULT_UNIQUE_INSTANCE_NAME = 'pywren_builder'
-DEFAULT_EC2_KEY_NAME='ec2-us-west-2'
-DEFAULT_INSTANCE_TYPE='m4.large'
+
+DEFAULT_BUILDER = {'aws_region' : None, 
+                   'tgt_ami' : 'ami-7172b611', 
+                   'gpu_tgt_ami' : 'ami-dfb13ebf', 
+                   'instance_name' : 'pywren_builder', 
+                   'aws_ec2_key' : None, 
+                   'instance_type' : 'm4.large'}
+
+BUILDER_ENV = DEFAULT_BUILDER.copy()
+
+BUILDER_ENV.update(yaml.load(open("builder_config.yaml", 'r')))
+
 
 # this is our temporary working directory where we store build artifacts
 # and downloaded code 
@@ -51,15 +57,16 @@ def get_target_instance(region_name, unique_instance_name,
 
     return {rolename : res}
 
-env.roledefs.update(get_target_instance(DEFAULT_REGION, 
-                                        DEFAULT_UNIQUE_INSTANCE_NAME))
+env.roledefs.update(get_target_instance(BUILDER_ENV['aws_region'], 
+                                        BUILDER_ENV['instance_name']))
+
 
 @task
-def launch(region=DEFAULT_REGION, 
-           tgt_ami = DEFAULT_TGT_AMI, 
-           unique_instance_name = DEFAULT_UNIQUE_INSTANCE_NAME, 
-           ec2_key_name = DEFAULT_EC2_KEY_NAME, 
-           instance_type = DEFAULT_INSTANCE_TYPE):
+def launch(region = BUILDER_ENV['aws_region'],
+           tgt_ami = BUILDER_ENV['tgt_ami'], 
+           unique_instance_name = BUILDER_ENV['instance_name'], 
+           ec2_key_name = BUILDER_ENV['aws_ec2_key'], 
+           instance_type = BUILDER_ENV['instance_type']):
 
     ec2 = boto3.resource('ec2', region_name=region)
 
@@ -92,14 +99,15 @@ def ssh():
 
 
 @task
-def terminate():
-    ec2 = boto3.resource('ec2', region_name=DEFAULT_REGION)
+def terminate(region = BUILDER_ENV['aws_region'], 
+              unique_instance_name = BUILDER_ENV['instance_name']):
+    ec2 = boto3.resource('ec2', region_name=region)
 
     insts = []
     for i in ec2.instances.all():
         if i.state['Name'] == 'running':
             d = tags_to_dict(i.tags)
-            if d['Name'] == DEFAULT_UNIQUE_INSTANCE_NAME:
+            if d['Name'] == unique_instance_name:
                 i.terminate()
                 insts.append(i)
 
@@ -172,7 +180,7 @@ def shrink_runtime():
     execute(shrink_strip_shared_libs, CONDA_INSTALL_DIR)
     execute(shrink_delete_pyc, CONDA_INSTALL_DIR)
     res = execute(get_runtime_size, CONDA_INSTALL_DIR)
-    print "The runtime is", res
+    print "The runtime is", int(res.values()[0])/1e3, "MB"
 
 
 

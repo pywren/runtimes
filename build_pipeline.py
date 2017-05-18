@@ -132,7 +132,7 @@ def check_runtime(build_file, outfile):
                  'tar_s3_url' : tar_s3_url}, 
                 open(outfile, 'w'))
 
-BUCKETS = ['pywren-public-us-west-1', 
+DEPLOY_BUCKETS = ['pywren-public-us-west-1', 
            'pywren-public-us-east-1', 
            'pywren-public-us-west-2', 
            'pywren-public-us-east-2']
@@ -148,7 +148,7 @@ def shard_runtime(infile, outfile):
     build_file = validated_runtime['build_config_file']
     runtime_name = validated_runtime['runtime_name']
 
-    for bucket in BUCKETS:
+    for bucket in DEPLOY_BUCKETS:
         OUT_URL = "s3://{}/pywren.runtimes/{}".format(bucket, runtime_name)
         print OUT_URL
         execute(fabfile_builder.shard_runtime, s3_url_base_source, OUT_URL, 
