@@ -1,0 +1,26 @@
+FROM amazonlinux:2016.09
+
+RUN yum update -y
+RUN yum install -y \
+    atlas-devel \
+    atlas-sse3-devel \
+    blas-devel \
+    gcc \
+    gcc-c++ \
+    lapack-devel \
+    python34-devel \
+    python34-virtualenv \
+    findutils \
+    zip
+
+RUN yum install -y \
+    libffi-devel \
+    openssl-devel
+
+
+# RUN yum -y install https://rhel6.iuscommunity.org/ius-release.rpm && yum -y install python36u-pip
+# ENV PYTHONPATH=/src
+
+# fab -f fabfile_builder.py -R builder build_all_runtimes
+# fab -f fabfile_builder.py build_all_runtimes
+

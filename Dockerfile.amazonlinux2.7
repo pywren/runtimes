@@ -1,0 +1,29 @@
+FROM amazonlinux:2016.09
+
+RUN yum update -y
+RUN yum install -y \
+    atlas-devel \
+    atlas-sse3-devel \
+    blas-devel \
+    gcc \
+    gcc-c++ \
+    lapack-devel \
+    python27-devel \
+    python27-virtualenv \
+    findutils \
+    zip
+
+RUN yum install -y \
+    libffi-devel \
+    openssl-devel
+
+RUN yum install -y \
+    wget \
+    bzip2
+
+RUN pip install fabric boto3 cloudpickle pyaml glob2 awscli
+
+WORKDIR /var/task
+
+# RUN yum -y install https://rhel6.iuscommunity.org/ius-release.rpm && yum -y install python36u-pip
+# ENV PYTHONPATH=/src

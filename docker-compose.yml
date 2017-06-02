@@ -1,0 +1,45 @@
+ version: '2'
+ services:
+
+  amazonlinux2.7:
+    # build: .
+    build:
+      context: ./
+      dockerfile: Dockerfile.amazonlinux2.7
+    volumes:
+       - .:/var/task
+       - ~/.aws/:/root/.aws
+    environment:
+       - S3_BUCKET
+
+  amazonlinux3.4:
+    # build: .
+    build:
+      context: ./
+      dockerfile: Dockerfile.amazonlinux3.4
+    volumes:
+       - .:/var/task
+
+  amazonlinux3.6:
+    # build: .
+    build:
+      context: ./
+      dockerfile: Dockerfile.amazonlinux3.6
+    volumes:
+       - .:/var/task
+
+  lambci-python3.4:
+    # build: .
+    build:
+      context: ./
+      dockerfile: Dockerfile.build-python3.4
+    volumes:
+       - .:/var/task
+
+  lambci-python3.6:
+    # build: .
+    build:
+      context: ./
+      dockerfile: Dockerfile.build-python3.6
+    volumes:
+       - .:/var/task
