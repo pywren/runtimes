@@ -2,72 +2,99 @@ import os
 import hashlib
 
 
-CONDA_DEFAULT_LIST = ["tblib", 
-                      "numpy", 
-                      "pytest", 
-                      "Click", 
-                      "numba", 
-                      "boto3", 
-                      "PyYAML", 
+CONDA_DEFAULT_LIST = ["tblib",
+                      "numpy",
+                      "pytest",
+                      "Click",
+                      "numba",
+                      "boto3",
+                      "PyYAML",
                       'six',
                       "cython", 'future']
 
 PIP_DEFAULT_LIST = ['glob2', 'boto', 'certifi']
 PIP_DEFAULT_UPGRADE_LIST = ['cloudpickle', 'enum34']
 
-CONDA_ML_SET = ['scipy', 'pillow', 'cvxopt', 'scikit-learn']
-PIP_ML_SET = ['cvxpy', 'redis']
+CONDA_ML_SET = ['scipy', 'pillow', 'cvxopt', 'scikit-learn', 'psycopg2', 'pandas']
+PIP_ML_SET = []
 
 CONDA_OPT_SET = ['scipy', 'cvxopt', ('mosek', 'mosek')]
 PIP_OPT_SET = ['cvxpy' ]
 
-RUNTIMES = {'minimal' : {'pythonvers' : ["2.7", "3.5", "3.6"],  
-                         'packages' : { 
-                             'conda_install' : CONDA_DEFAULT_LIST, 
-                             'pip_install' : PIP_DEFAULT_LIST, 
+CONDA_ES_SET = []
+PIP_ES_SET = ['elasticsearch', 'requests_aws4auth']
+
+CONDA_PSQL_SET = []
+PIP_PSQL_SET = ['psycopg2']
+
+CONDA_IMG_SET = [
+    'scipy', 'pillow', 'cvxopt', 'psycopg2', 'imagehash', 'olefile',
+    'pywavelets']
+PIP_IMG_SET = ['psycopg2']
+
+RUNTIMES = {'minimal' : {'pythonvers' : ["2.7", "3.4", "3.5", "3.6"],
+                         'packages' : {
+                             'conda_install' : CONDA_DEFAULT_LIST,
+                             'pip_install' : PIP_DEFAULT_LIST,
                              'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST}},
-            'ml' : {'pythonvers' :  ["2.7", "3.5", "3.6"],
+            'ml' : {'pythonvers' :  ["2.7", "3.4", "3.5", "3.6"],
                     'packages' : {
-                        'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET, 
-                        'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET, 
+                        'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET,
+                        'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET,
                         'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST }},
-            'default' : {'pythonvers' : ["2.7", "3.5", "3.6"], 
+            'default' : {'pythonvers' : ["2.7", "3.4", "3.5", "3.6"],
                          'packages' : {
-                             'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET, 
-                             'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET, 
-                             'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST}}, 
-            'opt' : {'pythonvers' : ["2.7"], 
+                             'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET,
+                             'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET,
+                             'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST}},
+            'opt' : {'pythonvers' : ["2.7"],
                          'packages' : {
-                             'conda_install' : CONDA_DEFAULT_LIST + CONDA_OPT_SET, 
-                             'pip_install' : PIP_DEFAULT_LIST + PIP_OPT_SET, 
-                             'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST }}
+                             'conda_install' : CONDA_DEFAULT_LIST + CONDA_OPT_SET,
+                             'pip_install' : PIP_DEFAULT_LIST + PIP_OPT_SET,
+                             'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST }},
+            'elastic' : {'pythonvers' :  ["2.7", "3.4", "3.5", "3.6"],
+                    'packages' : {
+                        'conda_install' : CONDA_DEFAULT_LIST + CONDA_ES_SET,
+                        'pip_install' : PIP_DEFAULT_LIST + PIP_ES_SET,
+                        'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST }},
+            'psql' : {'pythonvers' :  ["2.7", "3.4", "3.5", "3.6"],
+                    'packages' : {
+                        'conda_install' : CONDA_DEFAULT_LIST + CONDA_PSQL_SET,
+                        'pip_install' : PIP_DEFAULT_LIST + PIP_PSQL_SET,
+                        'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST }},
+
+            'img' : {'pythonvers' :  ["2.7", "3.4", "3.5", "3.6"],
+                    'packages' : {
+                        'conda_install' : CONDA_DEFAULT_LIST + CONDA_IMG_SET,
+                        'pip_install' : PIP_DEFAULT_LIST + PIP_IMG_SET,
+                        'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST }},
 
 }
 
 
 
-CONDA_TEST_STRS = {'numpy' : "__import__('numpy')", 
-                   'pytest' : "__import__('pytest')", 
-                   "numba" : "__import__('numba')", 
-                   "boto3" : "__import__('boto3')", 
-                   "PyYAML" : "__import__('yaml')", 
-                   "boto" : "__import__('boto')", 
-                   "scipy" : "__import__('scipy')", 
-                   "pillow" : "__import__('PIL.Image')", 
-                   "cvxopt" : "__import__('cvxopt')", 
-                   "scikit-image" : "__import__('skimage')", 
+CONDA_TEST_STRS = {'numpy' : "__import__('numpy')",
+                   'pytest' : "__import__('pytest')",
+                   "numba" : "__import__('numba')",
+                   "boto3" : "__import__('boto3')",
+                   "PyYAML" : "__import__('yaml')",
+                   "boto" : "__import__('boto')",
+                   "scipy" : "__import__('scipy')",
+                   "pillow" : "__import__('PIL.Image')",
+                   "cvxopt" : "__import__('cvxopt')",
+                   "scikit-image" : "__import__('skimage')",
                    "scikit-learn" : "__import__('sklearn')"}
-PIP_TEST_STRS = {"glob2" : "__import__('glob2')", 
-                 "cvxpy" : "__import__('cvxpy')", 
-                 "redis" : "__import__('redis')", 
+PIP_TEST_STRS = {"glob2" : "__import__('glob2')",
+                 "cvxpy" : "__import__('cvxpy')",
+                 "redis" : "__import__('redis')",
                  "certifi": "__import__('certifi')"}
 
-S3_BUCKET = "s3://ericmjonas-public"
+S3_BUCKET = "s3://{}".format(os.environ['S3_BUCKET'])
 S3URL_STAGING_BASE = S3_BUCKET + "/pywren.runtime.staging"
 S3URL_BASE = S3_BUCKET + "/pywren.runtime"
 
 def get_staged_runtime_url(runtime_name, runtime_python_version):
-    s3url = "{}/pywren_runtime-{}-{}".format(S3URL_STAGING_BASE, 
+    s3url = "{}/pywren_runtime-{}-{}".format(S3URL_STAGING_BASE,
                                              runtime_python_version, runtime_name)
 
     return s3url + ".tar.gz", s3url + ".meta.json"
