@@ -5,11 +5,14 @@ import fabfile_builder
 import subprocess
 import cPickle as pickle
 import runtimes
+import time
 
 # create anaconda environments for the supported python versions
 
-CONFIG_FILES = ['minimal_2.7.yaml', 'minimal_3.6.yaml', 'tf_cpu_2.7.yaml', 
-                'default_2.7.yaml', 'default_3.5.yaml']
+CONFIG_FILES = ['minimal_2.7.yaml'
+                #, 'minimal_3.6.yaml', 'tf_cpu_2.7.yaml', 
+                'default_2.7.yaml', 'default_3.5.yaml', 'default_3.6.yaml'
+]
 BUILD_WORKING = "build.working"
 
 AWS_REGION = 'us-west-2'
@@ -28,9 +31,8 @@ STAGING_URL_BASE = "s3://ericmjonas-public/pywren-staging/"
 @files(params)
 @jobs_limit(1)
 def build_runtime(infile, outfile):
-
+    t1 = time.time()
     hosts = fabfile_builder.get_target_instance(AWS_REGION, UNIQUE_INSTANCE_NAME).values()[0]
-
     runtime_name = os.path.splitext(os.path.basename(infile))[0]
 
     execute(fabfile_builder.build_runtime, config=infile, 
@@ -47,11 +49,13 @@ def build_runtime(infile, outfile):
 
     runtime_tar_s3_url, runtime_meta_s3_url = deploy_results.values()[0]
 
+    t2 = time.time()
 
     pickle.dump({'infile' : infile, 
                  'runtime_name' : runtime_name, 
                  'runtime_tar_s3_url' : runtime_tar_s3_url, 
-                 'runtime_meta_s3_url' : runtime_meta_s3_url}, 
+                 'runtime_meta_s3_url' : runtime_meta_s3_url, 
+                 'time' : t2-t1}, 
                 open(outfile, 'w'))
 
 
@@ -133,9 +137,9 @@ def check_runtime(build_file, outfile):
                 open(outfile, 'w'))
 
 DEPLOY_BUCKETS = ['pywren-public-us-west-1', 
-           'pywren-public-us-east-1', 
-           'pywren-public-us-west-2', 
-           'pywren-public-us-east-2']
+                  'pywren-public-us-east-1', 
+                  'pywren-public-us-west-2', 
+                  'pywren-public-us-east-2']
 
 NUM_SHARDS = 100
 
@@ -158,7 +162,9 @@ def shard_runtime(infile, outfile):
 
 if __name__ == "__main__":
     pipeline_run([build_runtime, 
+                  
                   create_environment, check_runtime, 
-                  shard_runtime])
+                  shard_runtime
+    ])
             
     

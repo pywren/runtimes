@@ -1,4 +1,4 @@
-pythonver: '3.6'
+pythonver: '3.5'
 miniconda_url: https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 conda:
     install: # run conda install foo. To install from a custom channel use [channel, package]
@@ -7,6 +7,7 @@ conda:
         - PyYAML
         - six
         - future
+        - numba
 pip:
     install:
         - glob2

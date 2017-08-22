@@ -6,6 +6,7 @@ conda:
         - boto3
         - PyYAML
         - six
+        - numpy
         - future
 pip:
     install:
