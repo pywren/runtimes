@@ -9,11 +9,17 @@ import time
 
 # create anaconda environments for the supported python versions
 
-CONFIG_FILES = ['minimal_2.7.yaml'
+CONFIG_FILES = ['minimal_2.7.yaml', 
+                'minimal_3.5.yaml', 
+                'minimal_3.6.yaml', 
                 #, 'minimal_3.6.yaml', 'tf_cpu_2.7.yaml', 
-                'default_2.7.yaml', 'default_3.5.yaml', 'default_3.6.yaml'
+                'default_2.7.yaml', 
+                'default_3.5.yaml', 
+                'default_3.6.yaml'
 ]
 BUILD_WORKING = "build.working"
+LOCAL_TEST_ENV = 'test.env'
+get_env_path = lambda x: os.path.abspath(os.path.join(LOCAL_TEST_ENV, x))
 
 AWS_REGION = 'us-west-2'
 UNIQUE_INSTANCE_NAME = 'pywren_builder'
@@ -71,20 +77,24 @@ def conda_env_params():
     for python_ver, conda_env_name in CONDA_TEST_ENVS.items():
         yield None, conda_env_name + ".env", python_ver, conda_env_name
 @jobs_limit(1)
+@mkdir(LOCAL_TEST_ENV)
 @files(conda_env_params)
 def create_environment(infile, outfile, python_ver, conda_env_name):
     print "removing old environment", conda_env_name
-    subprocess.call("conda remove --name {} --all --y".format(conda_env_name), 
-                    shell=True)
+    env_path = get_env_path(conda_env_name)
+    try:
+        subprocess.call("conda remove --prefix {} --all --y".format(env_path, 
+                                                                    shell=True))
+    except OSError:
+        pass
+
     print "creating new environment", conda_env_name
 
-    subprocess.call("conda create --name={} python={} --y".format(conda_env_name,
-                                                                      python_ver), 
+    subprocess.call("conda create --prefix {}  python={} --y".format(env_path, 
+                                                                  python_ver), 
                             shell=True)
-    print "getting path", conda_env_name
 
-    env_path = subprocess.check_output("source activate {}; printenv PATH".format(conda_env_name), 
-                                shell=True)
+
     print "saving results"
     pickle.dump({'python_ver' : python_ver, 
                  'conda_env_name' : conda_env_name, 
@@ -107,13 +117,15 @@ def check_runtime(build_file, outfile):
     pythonver = runtime_config_dict['pythonver']
     bucket_name, key_name = runtimes.split_s3_url(tar_s3_url)
 
-    print pythonver, type(pythonver), CONDA_TEST_ENVS
 
     test_env_name = CONDA_TEST_ENVS[pythonver]
+    print pythonver, type(pythonver), CONDA_TEST_ENVS
+    print "running", build_file, "on", test_env_name
     conda_env_config = pickle.load(open(test_env_name + ".env", 'r'))
     env_path = conda_env_config['env_path']
     env = os.environ.copy()
-    env['PATH'] = env_path
+    env['PATH'] = "{}/bin:{}".format(env_path, env['PATH'])
+    print "Running with path", env_path
     
     PYWREN_INSTALL_CMD = 'pip install pywren --upgrade'
     subprocess.check_output(PYWREN_INSTALL_CMD, 
@@ -163,7 +175,8 @@ def shard_runtime(infile, outfile):
 if __name__ == "__main__":
     pipeline_run([build_runtime, 
                   
-                  create_environment, check_runtime, 
+                  create_environment, 
+                  check_runtime, 
                   shard_runtime
     ])
             
