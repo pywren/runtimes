@@ -10,10 +10,12 @@ import time
 # create anaconda environments for the supported python versions
 
 CONFIG_FILES = ['minimal_2.7.yaml', 
+                'minimal_3.4.yaml',
                 'minimal_3.5.yaml', 
                 'minimal_3.6.yaml', 
                 #, 'minimal_3.6.yaml', 'tf_cpu_2.7.yaml', 
-                'default_2.7.yaml', 
+                'default_2.7.yaml',
+                'default_3.4.yaml',  
                 'default_3.5.yaml', 
                 'default_3.6.yaml'
 ]
@@ -21,7 +23,15 @@ BUILD_WORKING = "build.working"
 LOCAL_TEST_ENV = 'test.env'
 get_env_path = lambda x: os.path.abspath(os.path.join(LOCAL_TEST_ENV, x))
 
-AWS_REGION = 'us-west-2'
+DEPLOY_BUCKETS = ['pywren-public-us-west-1', 
+                  'pywren-public-us-east-1', 
+                  'pywren-public-us-west-2', 
+                  'pywren-public-us-east-2']
+
+DEPLOY_NUM_SHARDS = 100
+
+
+AWS_REGION_FOR_BUILD_MACHINE = 'us-west-2'
 UNIQUE_INSTANCE_NAME = 'pywren_builder'
 
 def params():
@@ -38,7 +48,8 @@ STAGING_URL_BASE = "s3://ericmjonas-public/pywren-staging/"
 @jobs_limit(1)
 def build_runtime(infile, outfile):
     t1 = time.time()
-    hosts = fabfile_builder.get_target_instance(AWS_REGION, UNIQUE_INSTANCE_NAME).values()[0]
+    hosts = fabfile_builder.get_target_instance(AWS_REGION_FOR_BUILD_MACHINE, 
+                                                UNIQUE_INSTANCE_NAME).values()[0]
     runtime_name = os.path.splitext(os.path.basename(infile))[0]
 
     execute(fabfile_builder.build_runtime, config=infile, 
@@ -148,12 +159,6 @@ def check_runtime(build_file, outfile):
                  'tar_s3_url' : tar_s3_url}, 
                 open(outfile, 'w'))
 
-DEPLOY_BUCKETS = ['pywren-public-us-west-1', 
-                  'pywren-public-us-east-1', 
-                  'pywren-public-us-west-2', 
-                  'pywren-public-us-east-2']
-
-NUM_SHARDS = 100
 
 @transform(check_runtime, suffix(".success.pickle"), ".deploy.pickle")
 def shard_runtime(infile, outfile):
@@ -168,8 +173,8 @@ def shard_runtime(infile, outfile):
         OUT_URL = "s3://{}/pywren.runtimes/{}".format(bucket, runtime_name)
         print OUT_URL
         execute(fabfile_builder.shard_runtime, s3_url_base_source, OUT_URL, 
-                NUM_SHARDS)
-    pickle.dump({'num_shards' : NUM_SHARDS}, 
+                DEPLOY_NUM_SHARDS)
+    pickle.dump({'num_shards' : DEPLOY_NUM_SHARDS}, 
                 open(outfile, 'w'))
 
 if __name__ == "__main__":
