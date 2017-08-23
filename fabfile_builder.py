@@ -89,6 +89,9 @@ def launch(region = BUILDER_ENV['aws_region'],
         ]
     )
 
+@task
+def setup_ami():
+    sudo('yum -y groupinstall "Development Tools" ')
 
 @task        
 def ssh():

@@ -6,6 +6,9 @@ import subprocess
 import cPickle as pickle
 import runtimes
 import time
+import boto3
+import tarfile
+from pywren import wrenutil
 
 # create anaconda environments for the supported python versions
 
@@ -18,6 +21,7 @@ CONFIG_FILES = ['minimal_2.7.yaml',
                 'default_3.4.yaml',  
                 'default_3.5.yaml', 
                 'default_3.6.yaml'
+                'too_big_do_not_use_2.7.yaml' # FOR TESTING ONLY 
 ]
 BUILD_WORKING = "build.working"
 LOCAL_TEST_ENV = 'test.env'
@@ -117,7 +121,7 @@ def create_environment(infile, outfile, python_ver, conda_env_name):
 def check_runtime(build_file, outfile):
 
 
-
+    t1 = time.time()
     build_result = pickle.load(open(build_file, 'r'))
     tar_s3_url = build_result['runtime_tar_s3_url']
     runtime_name = build_result['runtime_name']
@@ -127,6 +131,21 @@ def check_runtime(build_file, outfile):
 
     pythonver = runtime_config_dict['pythonver']
     bucket_name, key_name = runtimes.split_s3_url(tar_s3_url)
+
+
+    # Sometimes the previous build stage creates a
+    # tarball that python2's tar reader can't read, so 
+    # we have this test as an early warning
+
+    s3_client = boto3.client('s3')
+    res = s3_client.get_object(Bucket=bucket_name, 
+                               Key=key_name)
+    condatar = tarfile.open(
+        mode="r:gz",
+        fileobj=wrenutil.WrappedStreamingBody(res['Body'], res['ContentLength']))
+
+    condatar.extractall("/tmp/foo")
+
 
 
     test_env_name = CONDA_TEST_ENVS[pythonver]
@@ -151,18 +170,20 @@ def check_runtime(build_file, outfile):
 
     TEST_CMD = "python pywren_validate_runtime.py {} {}".format(bucket_name, key_name)
     res = subprocess.check_output(TEST_CMD, shell=True, env=env)
-    
+    t2 = time.time()
     pickle.dump({'res' : res, 
                  'build_file' : build_file, 
                  'runtime_name' : runtime_name, 
                  'build_config_file' : build_config_file, 
-                 'tar_s3_url' : tar_s3_url}, 
+                 'tar_s3_url' : tar_s3_url, 
+                 'time' : t2-t1}, 
                 open(outfile, 'w'))
 
 
 @transform(check_runtime, suffix(".success.pickle"), ".deploy.pickle")
 def shard_runtime(infile, outfile):
     
+    t1 = time.time()
     validated_runtime = pickle.load(open(infile, 'r'))
     tar_s3_url = validated_runtime['tar_s3_url']
     s3_url_base_source = tar_s3_url.replace(".tar.gz", "")
@@ -174,7 +195,10 @@ def shard_runtime(infile, outfile):
         print OUT_URL
         execute(fabfile_builder.shard_runtime, s3_url_base_source, OUT_URL, 
                 DEPLOY_NUM_SHARDS)
-    pickle.dump({'num_shards' : DEPLOY_NUM_SHARDS}, 
+
+    t2 = time.time()
+    pickle.dump({'num_shards' : DEPLOY_NUM_SHARDS, 
+                 'time' : t2-t1}, 
                 open(outfile, 'w'))
 
 if __name__ == "__main__":

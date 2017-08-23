@@ -1,0 +1,27 @@
+pythonver: '2.7'
+miniconda_url: https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh
+include:
+  - minimal_2.7.yaml
+conda:
+    install:
+      - numpy
+      - numba
+      - scipy
+      - pillow
+      - cvxopt
+      - scikit-learn
+      - scikit-image
+      - pandas
+      - sqlalchemy
+      - matplotlib
+pip:
+    install:
+      - glob2
+      - boto
+      - cvxpy
+    upgrade:
+      - cloudpickle
+      - enum34
+
+extracmds:
+  - "ls -lah"

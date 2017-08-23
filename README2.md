@@ -51,7 +51,7 @@ amazon region and your EC2 key name in `builder_config.yaml`.
 
 
 ```
-fab -f fabfile_builder.py launch
+fab -f fabfile_builder.py launch setup_ami
 ```
 
 Then make sure you can ssh into the machine via:
