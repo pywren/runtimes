@@ -20,9 +20,22 @@ CONFIG_FILES = ['minimal_2.7.yaml',
                 'default_2.7.yaml',
                 'default_3.4.yaml',  
                 'default_3.5.yaml', 
-                'default_3.6.yaml'
+                'default_3.6.yaml',
                 'too_big_do_not_use_2.7.yaml' # FOR TESTING ONLY 
+                'too_big_do_not_use_3.4.yaml' # FOR TESTING ONLY 
+                'too_big_do_not_use_3.5.yaml' # FOR TESTING ONLY 
+                'too_big_do_not_use_3.6.yaml' # FOR TESTING ONLY 
 ]
+
+# some runtimes are actually broken intentionally and should not
+# be tested
+SKIP_RUN_TEST = ['too_big_do_not_use_2.7.yaml',
+                 'too_big_do_not_use_3.4.yaml', 
+                 'too_big_do_not_use_3.5.yaml', 
+                 'too_big_do_not_use_3.6.yaml'
+] 
+
+
 BUILD_WORKING = "build.working"
 LOCAL_TEST_ENV = 'test.env'
 get_env_path = lambda x: os.path.abspath(os.path.join(LOCAL_TEST_ENV, x))
@@ -115,6 +128,7 @@ def create_environment(infile, outfile, python_ver, conda_env_name):
                  'conda_env_name' : conda_env_name, 
                  'env_path' : env_path}, 
                 open(outfile, 'w'))
+
     
 @follows(create_environment)    
 @transform(build_runtime, suffix(".built.pickle"), ".success.pickle")
@@ -145,31 +159,34 @@ def check_runtime(build_file, outfile):
         fileobj=wrenutil.WrappedStreamingBody(res['Body'], res['ContentLength']))
 
     condatar.extractall("/tmp/foo")
+    print "build_config_file=", build_config_file
+    if os.path.split(build_config_file)[-1] in SKIP_RUN_TEST :
+        print "skipping the test of", build_config_file
+        res = None
+    else:
 
+        test_env_name = CONDA_TEST_ENVS[pythonver]
+        print pythonver, type(pythonver), CONDA_TEST_ENVS
+        print "running", build_file, "on", test_env_name
+        conda_env_config = pickle.load(open(test_env_name + ".env", 'r'))
+        env_path = conda_env_config['env_path']
+        env = os.environ.copy()
+        env['PATH'] = "{}/bin:{}".format(env_path, env['PATH'])
+        print "Running with path", env_path
 
+        PYWREN_INSTALL_CMD = 'pip install pywren --upgrade'
+        subprocess.check_output(PYWREN_INSTALL_CMD, 
+                                shell=True, env=env)
 
-    test_env_name = CONDA_TEST_ENVS[pythonver]
-    print pythonver, type(pythonver), CONDA_TEST_ENVS
-    print "running", build_file, "on", test_env_name
-    conda_env_config = pickle.load(open(test_env_name + ".env", 'r'))
-    env_path = conda_env_config['env_path']
-    env = os.environ.copy()
-    env['PATH'] = "{}/bin:{}".format(env_path, env['PATH'])
-    print "Running with path", env_path
-    
-    PYWREN_INSTALL_CMD = 'pip install pywren --upgrade'
-    subprocess.check_output(PYWREN_INSTALL_CMD, 
-                            shell=True, env=env)
+        LAMBDA_INSTALL_CMD = 'pywren deploy_lambda'
+        subprocess.check_output(LAMBDA_INSTALL_CMD, 
+                                shell=True, env=env)
 
-    LAMBDA_INSTALL_CMD = 'pywren deploy_lambda'
-    subprocess.check_output(LAMBDA_INSTALL_CMD, 
-                            shell=True, env=env)
+        print subprocess.check_output("python --version", 
+                                shell=True, env=env)
 
-    print subprocess.check_output("python --version", 
-                            shell=True, env=env)
-
-    TEST_CMD = "python pywren_validate_runtime.py {} {}".format(bucket_name, key_name)
-    res = subprocess.check_output(TEST_CMD, shell=True, env=env)
+        TEST_CMD = "python pywren_validate_runtime.py {} {}".format(bucket_name, key_name)
+        res = subprocess.check_output(TEST_CMD, shell=True, env=env)
     t2 = time.time()
     pickle.dump({'res' : res, 
                  'build_file' : build_file, 
