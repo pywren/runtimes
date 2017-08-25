@@ -21,10 +21,10 @@ CONFIG_FILES = ['minimal_2.7.yaml',
                 'default_3.4.yaml',  
                 'default_3.5.yaml', 
                 'default_3.6.yaml',
-                'too_big_do_not_use_2.7.yaml' # FOR TESTING ONLY 
-                'too_big_do_not_use_3.4.yaml' # FOR TESTING ONLY 
-                'too_big_do_not_use_3.5.yaml' # FOR TESTING ONLY 
-                'too_big_do_not_use_3.6.yaml' # FOR TESTING ONLY 
+                'too_big_do_not_use_2.7.yaml', # FOR TESTING ONLY 
+                'too_big_do_not_use_3.4.yaml', # FOR TESTING ONLY 
+                'too_big_do_not_use_3.5.yaml', # FOR TESTING ONLY 
+                'too_big_do_not_use_3.6.yaml', # FOR TESTING ONLY 
 ]
 
 # some runtimes are actually broken intentionally and should not
