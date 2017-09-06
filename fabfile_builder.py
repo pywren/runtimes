@@ -135,7 +135,7 @@ def build_runtime_from_config(runtime_config):
                 else:
                     cmdstr = 'conda install -q -y'
                 for c in runtime_config['conda'][mode]:
-                    if isinstance(c, tuple):
+                    if isinstance(c, tuple) or isinstance(c, list):
                         run("{} -c {} {}".format(cmdstr, c[0], c[1]))
                     else:
                         run("{} {}".format(cmdstr, c))
@@ -182,6 +182,7 @@ def shrink_runtime():
     execute(shrink_remove_non_avx2_mkl, CONDA_INSTALL_DIR)
     execute(shrink_strip_shared_libs, CONDA_INSTALL_DIR)
     execute(shrink_delete_pyc, CONDA_INSTALL_DIR)
+    execute(shrink_delete_static_libs, CONDA_INSTALL_DIR)
     res = execute(get_runtime_size, CONDA_INSTALL_DIR)
     print "The runtime is", int(res.values()[0])/1e3, "MB"
 

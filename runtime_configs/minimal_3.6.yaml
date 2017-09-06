@@ -3,7 +3,6 @@ miniconda_url: https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_6
 conda:
     install: # run conda install foo. To install from a custom channel use [channel, package]
         - tblib
-        - boto3
         - PyYAML
         - six
         - future
@@ -12,6 +11,8 @@ pip:
     install:
         - glob2
         - boto
+        - boto3
+        - certifi
     upgrade:
         - cloudpickle
         - enum34

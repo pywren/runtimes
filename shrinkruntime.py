@@ -27,10 +27,15 @@ def shrink_strip_shared_libs(conda_install_dir):
 def shrink_delete_pyc(conda_install_dir):
     run('find {} -name "*.pyc" -delete'.format(conda_install_dir))
 
+@task
+def shrink_delete_static_libs(conda_install_dir):
+    run('find {} -name "*.a" -delete'.format(conda_install_dir))
+
 
 @task
 def get_runtime_size(conda_install_dir):
     with hide():
         res = run('du -s {}'.format(conda_install_dir))
+        print(res) 
         kb = int(res.split("\t")[0])
     return kb

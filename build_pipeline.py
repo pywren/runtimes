@@ -12,19 +12,18 @@ from pywren import wrenutil
 
 # create anaconda environments for the supported python versions
 
-CONFIG_FILES = ['minimal_2.7.yaml', 
-                'minimal_3.4.yaml',
-                'minimal_3.5.yaml', 
-                'minimal_3.6.yaml', 
-                #, 'minimal_3.6.yaml', 'tf_cpu_2.7.yaml', 
-                'default_2.7.yaml',
-                'default_3.4.yaml',  
-                'default_3.5.yaml', 
+CONFIG_FILES = [#'minimal_2.7.yaml', 
+                #'minimal_3.4.yaml',
+                #'minimal_3.5.yaml', 
+                #'minimal_3.6.yaml', 
+                #'default_2.7.yaml',
+                #'default_3.4.yaml',  
+                #'default_3.5.yaml', 
                 'default_3.6.yaml',
-                'too_big_do_not_use_2.7.yaml', # FOR TESTING ONLY 
-                'too_big_do_not_use_3.4.yaml', # FOR TESTING ONLY 
-                'too_big_do_not_use_3.5.yaml', # FOR TESTING ONLY 
-                'too_big_do_not_use_3.6.yaml', # FOR TESTING ONLY 
+                #'too_big_do_not_use_2.7.yaml', # FOR TESTING ONLY 
+                #'too_big_do_not_use_3.4.yaml', # FOR TESTING ONLY 
+                #'too_big_do_not_use_3.5.yaml', # FOR TESTING ONLY 
+                #'too_big_do_not_use_3.6.yaml', # FOR TESTING ONLY 
 ]
 
 # some runtimes are actually broken intentionally and should not
@@ -40,10 +39,11 @@ BUILD_WORKING = "build.working"
 LOCAL_TEST_ENV = 'test.env'
 get_env_path = lambda x: os.path.abspath(os.path.join(LOCAL_TEST_ENV, x))
 
-DEPLOY_BUCKETS = ['pywren-public-us-west-1', 
-                  'pywren-public-us-east-1', 
+DEPLOY_BUCKETS = [#'pywren-public-us-west-1', 
+                  #'pywren-public-us-east-1', 
                   'pywren-public-us-west-2', 
-                  'pywren-public-us-east-2']
+                  #'pywren-public-us-east-2'
+]
 
 DEPLOY_NUM_SHARDS = 100
 

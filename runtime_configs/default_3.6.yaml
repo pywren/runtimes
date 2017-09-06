@@ -8,13 +8,11 @@ conda:
       - numba
       - scipy
       - pillow
-      - cvxopt
       - scikit-learn
 pip:
     install:
       - glob2
       - boto
-      - cvxpy
     upgrade:
       - cloudpickle
       - enum34
