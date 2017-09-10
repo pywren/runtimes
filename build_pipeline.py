@@ -12,18 +12,20 @@ from pywren import wrenutil
 
 # create anaconda environments for the supported python versions
 
-CONFIG_FILES = [#'minimal_2.7.yaml', 
-                #'minimal_3.4.yaml',
-                #'minimal_3.5.yaml', 
-                #'minimal_3.6.yaml', 
-                #'default_2.7.yaml',
-                #'default_3.4.yaml',  
-                #'default_3.5.yaml', 
+CONFIG_FILES = ['minimal_2.7.yaml', 
+                'minimal_3.4.yaml',
+                'minimal_3.5.yaml', 
+                'minimal_3.6.yaml', 
+                'default_2.7.yaml',
+                'default_3.4.yaml',  
+                'default_3.5.yaml', 
                 'default_3.6.yaml',
-                #'too_big_do_not_use_2.7.yaml', # FOR TESTING ONLY 
-                #'too_big_do_not_use_3.4.yaml', # FOR TESTING ONLY 
-                #'too_big_do_not_use_3.5.yaml', # FOR TESTING ONLY 
-                #'too_big_do_not_use_3.6.yaml', # FOR TESTING ONLY 
+                'too_big_do_not_use_2.7.yaml', # FOR TESTING ONLY 
+                'too_big_do_not_use_3.4.yaml', # FOR TESTING ONLY 
+                'too_big_do_not_use_3.5.yaml', # FOR TESTING ONLY 
+                'too_big_do_not_use_3.6.yaml', # FOR TESTING ONLY,
+                'deep_gpu_3.6.yaml', 
+                #'deep_cpu_3.6.yaml'
 ]
 
 # some runtimes are actually broken intentionally and should not
@@ -39,17 +41,24 @@ BUILD_WORKING = "build.working"
 LOCAL_TEST_ENV = 'test.env'
 get_env_path = lambda x: os.path.abspath(os.path.join(LOCAL_TEST_ENV, x))
 
-DEPLOY_BUCKETS = [#'pywren-public-us-west-1', 
-                  #'pywren-public-us-east-1', 
+DEPLOY_BUCKETS = ['pywren-public-us-west-1', 
+                  'pywren-public-us-east-1', 
                   'pywren-public-us-west-2', 
-                  #'pywren-public-us-east-2'
+                  'pywren-public-us-east-2'
 ]
 
 DEPLOY_NUM_SHARDS = 100
 
-
 AWS_REGION_FOR_BUILD_MACHINE = 'us-west-2'
 UNIQUE_INSTANCE_NAME = 'pywren_builder'
+
+# everyone gets deployed to all buckets and sharded the same number
+# of times unless here. This can be useful for testing. 
+
+DEPLOY_SHARD_LIMITS = {'deep_cpu_3.6.yaml' : {'buckets' : ['pywren-public-us-west-2'], 
+                                              'shards' : 1}, 
+                       'deep_gpu_3.6.yaml' : {'buckets' : ['pywren-public-us-west-2'], 
+                                              'shards' : 1}}
 
 def params():
     for f in CONFIG_FILES:
@@ -199,13 +208,14 @@ def check_runtime(build_file, outfile):
 
 @transform(check_runtime, suffix(".success.pickle"), ".deploy.pickle")
 def shard_runtime(infile, outfile):
-    
     t1 = time.time()
     validated_runtime = pickle.load(open(infile, 'r'))
     tar_s3_url = validated_runtime['tar_s3_url']
     s3_url_base_source = tar_s3_url.replace(".tar.gz", "")
     build_file = validated_runtime['build_config_file']
     runtime_name = validated_runtime['runtime_name']
+    print "Runtime_name is ", runtime_name
+    kjlkjdfasdfalsj
 
     for bucket in DEPLOY_BUCKETS:
         OUT_URL = "s3://{}/pywren.runtimes/{}".format(bucket, runtime_name)
