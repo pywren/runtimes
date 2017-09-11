@@ -25,7 +25,8 @@ CONFIG_FILES = ['minimal_2.7.yaml',
                 'too_big_do_not_use_3.5.yaml', # FOR TESTING ONLY 
                 'too_big_do_not_use_3.6.yaml', # FOR TESTING ONLY,
                 'deep_gpu_3.6.yaml', 
-                #'deep_cpu_3.6.yaml'
+                #'deep_cpu_3.6.yaml',
+                'datascience_3.6.yaml'
 ]
 
 # some runtimes are actually broken intentionally and should not
@@ -33,7 +34,8 @@ CONFIG_FILES = ['minimal_2.7.yaml',
 SKIP_RUN_TEST = ['too_big_do_not_use_2.7.yaml',
                  'too_big_do_not_use_3.4.yaml', 
                  'too_big_do_not_use_3.5.yaml', 
-                 'too_big_do_not_use_3.6.yaml'
+                 'too_big_do_not_use_3.6.yaml', 
+                 'deep_gpu_3.6.yaml'
 ] 
 
 
@@ -55,9 +57,9 @@ UNIQUE_INSTANCE_NAME = 'pywren_builder'
 # everyone gets deployed to all buckets and sharded the same number
 # of times unless here. This can be useful for testing. 
 
-DEPLOY_SHARD_LIMITS = {'deep_cpu_3.6.yaml' : {'buckets' : ['pywren-public-us-west-2'], 
+DEPLOY_SHARD_LIMITS = {'deep_cpu_3.6' : {'buckets' : ['pywren-public-us-west-2'], 
                                               'shards' : 1}, 
-                       'deep_gpu_3.6.yaml' : {'buckets' : ['pywren-public-us-west-2'], 
+                       'deep_gpu_3.6' : {'buckets' : ['pywren-public-us-west-2'], 
                                               'shards' : 1}}
 
 def params():
@@ -214,14 +216,20 @@ def shard_runtime(infile, outfile):
     s3_url_base_source = tar_s3_url.replace(".tar.gz", "")
     build_file = validated_runtime['build_config_file']
     runtime_name = validated_runtime['runtime_name']
-    print "Runtime_name is ", runtime_name
-    kjlkjdfasdfalsj
 
-    for bucket in DEPLOY_BUCKETS:
+    # defaults
+    tgt_buckets = DEPLOY_BUCKETS
+    num_shards = DEPLOY_NUM_SHARDS
+    if runtime_name in DEPLOY_SHARD_LIMITS:
+        print "limiting deployment for ", runtime_name
+        tgt_buckets = DEPLOY_SHARD_LIMITS[runtime_name]['buckets']
+        num_shards = DEPLOY_SHARD_LIMITS[runtime_name]['shards']
+
+    for bucket in tgt_buckets:
         OUT_URL = "s3://{}/pywren.runtimes/{}".format(bucket, runtime_name)
         print OUT_URL
         execute(fabfile_builder.shard_runtime, s3_url_base_source, OUT_URL, 
-                DEPLOY_NUM_SHARDS)
+                num_shards)
 
     t2 = time.time()
     pickle.dump({'num_shards' : DEPLOY_NUM_SHARDS, 

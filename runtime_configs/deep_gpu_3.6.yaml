@@ -6,9 +6,9 @@ conda:
     install:
       - scikit-image
       - pandas
-      - (soumith, pytorch)
-      - (soumith, torchvision)
-      - (soumith, cuda80)
+      - [soumith, pytorch]
+      - [soumith, torchvision]
+      - [soumith, cuda80]
 pip:
     install:
       - glob2
