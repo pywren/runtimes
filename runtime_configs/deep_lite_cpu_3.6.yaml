@@ -1,0 +1,10 @@
+#### Light version to run on lambdas
+
+pythonver: '3.6'
+miniconda_url: https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+include:
+  - default_3.6.yaml
+conda:
+    install:
+      - [soumith, pytorch]
+      - [soumith, torchvision]
