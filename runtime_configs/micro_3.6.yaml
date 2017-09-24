@@ -1,12 +1,12 @@
+# Smallest possible runtime 
 pythonver: '3.6'
 miniconda_url: https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 conda:
-    install: # run conda install foo. To install from a custom channel use [channel, package]
+    install:
         - tblib
         - PyYAML
         - six
         - future
-        - numpy  # in the future we can strip this out
 
 pip:
     install:

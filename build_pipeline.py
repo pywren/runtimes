@@ -148,6 +148,7 @@ def create_environment(infile, outfile, python_ver, conda_env_name):
                  'env_path' : env_path}, 
                 open(outfile, 'w'))
 
+PYWREN_INSTALL_CMD = 'pip install pywren --upgrade'
     
 @follows(create_environment)    
 @transform(build_runtime, suffix(".built.pickle"), ".success.pickle")
@@ -193,7 +194,6 @@ def check_runtime(build_file, outfile):
         env['PATH'] = "{}/bin:{}".format(env_path, env['PATH'])
         print "Running with path", env_path
 
-        PYWREN_INSTALL_CMD = 'pip install pywren --upgrade'
         subprocess.check_output(PYWREN_INSTALL_CMD, 
                                 shell=True, env=env)
 

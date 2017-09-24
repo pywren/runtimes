@@ -6,6 +6,8 @@ conda:
         - PyYAML
         - six
         - future
+        - numpy  # in the future we can strip this out
+
 pip:
     install:
         - glob2
