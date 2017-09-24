@@ -6,7 +6,6 @@ conda:
         - PyYAML
         - six
         - future
-        - numba
 pip:
     install:
         - glob2

@@ -5,7 +5,6 @@ conda:
         - tblib
         - PyYAML
         - six
-        - numpy
         - future
 pip:
     install:

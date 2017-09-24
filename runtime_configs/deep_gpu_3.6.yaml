@@ -9,13 +9,6 @@ conda:
       - [soumith, pytorch]
       - [soumith, torchvision]
       - [soumith, cuda80]
-pip:
-    install:
-      - glob2
-      - boto
-    upgrade:
-      - cloudpickle
-      - enum34
 
 #extracmds:
 #  - "pip install --upgrade --no-deps  https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.0.1-cp27-none-linux_x86_64.whl"
