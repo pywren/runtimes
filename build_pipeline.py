@@ -28,7 +28,8 @@ CONFIG_FILES = ['minimal_2.7.yaml',
                 #'deep_cpu_3.6.yaml',
                 'datascience_3.6.yaml', 
                 'deep_cpu_3.6.yaml', 
-                
+                'pytorch_gpu_master_3.6.yaml', 
+                'micro_3.6.yaml'
 ]
 
 # some runtimes are actually broken intentionally and should not
@@ -38,7 +39,9 @@ SKIP_RUN_TEST = ['too_big_do_not_use_2.7.yaml',
                  'too_big_do_not_use_3.5.yaml', 
                  'too_big_do_not_use_3.6.yaml', 
                  'deep_gpu_3.6.yaml', 
-                 'deep_cpu_3.6.yaml'
+                 'deep_cpu_3.6.yaml',
+                 'pytorch_gpu_master_3.6.yaml', 
+                 'micro_3.6.yaml'
 ] 
 
 
@@ -64,7 +67,12 @@ DEPLOY_SHARD_LIMITS = {'deep_cpu_3.6' : {'buckets' : ['pywren-public-us-west-2']
                                               'shards' : 1}, 
                        'deep_gpu_3.6' : {'buckets' : ['pywren-public-us-west-2'], 
                                               'shards' : 1}, 
+                       'pytorch_gpu_master_3.6' : {'buckets' : ['pywren-public-us-west-2'], 
+                                              'shards' : 1}, 
                        'deep_cpu_3.6' : {'buckets' : 
+                                              ['pywren-public-us-west-2'], 
+                                              'shards' : 1}, 
+                       'micro_3.6' : {'buckets' : 
                                               ['pywren-public-us-west-2'], 
                                               'shards' : 1}, 
 
