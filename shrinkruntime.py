@@ -12,8 +12,13 @@ def shrink_remove_pkg(conda_install_dir):
 
 @task 
 def shrink_remove_non_avx2_mkl(conda_install_dir):
-    for g in ["*_mc.so", "*_mc2.so",  "*_mc3.so",  "*_avx512*", "*_avx.*"]:
+    for g in ["*_mc.so", "*_mc2.so",  "*_mc3.so",  "*_avx512*", "*_avx.*", "*_ao_worker.so", "*_scalapak*.so"]:
         run('find {}/lib -name "{}" -delete'.format(conda_install_dir, g))
+
+    # Additional things I may be able to delete
+    # I think that everything here uses the ILP interface instead of the LP interface and so
+    # the LP libraries can be deleted? 
+    run('find {}/lib -name "{}" -delete'.format(conda_install_dir, "*_lp64.so"))
 
 
 @task 
