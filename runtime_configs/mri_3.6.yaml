@@ -1,0 +1,13 @@
+pythonver: '3.6'
+miniconda_url: https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+include:
+  - minimal_3.6.yaml
+conda:
+    install:
+      - numpy
+      - numba
+      - pillow
+pip:
+    install:
+      - glob2
+      - dipy

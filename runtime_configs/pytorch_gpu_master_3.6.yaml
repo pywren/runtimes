@@ -8,12 +8,12 @@ conda:
       - mkl
       - pandas
       - setuptools
-      - cmake
-      - gcc
       - cffi
       - [soumith, cuda80]
-
+pip:
+    install:
+      - cvxpy
+      - qpth
 extracmds:
   - "git clone --recursive https://github.com/pytorch/pytorch"
-  - "CMAKE_PREFIX_PATH='$(dirname $(which conda))/../' /tmp/condarutime/bin/python pytorch/setup.py install"
-  
+  - "cd pytorch && CMAKE_PREFIX_PATH=/tmp/condaruntime /tmp/condaruntime/bin/python setup.py install"

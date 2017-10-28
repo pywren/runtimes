@@ -59,6 +59,11 @@ Then make sure you can ssh into the machine via:
 fab -f fabfile_builder.py -R builder ssh
 ```
 
+Then make sure the ami is set up
+```
+fab -f fabfile_builder.py -R builder setup_ami
+```
+
 Then build your runtime using the config 
 ```
 fab -f fabfile_builder.py -R builder build_runtime:your_config_filename.yaml

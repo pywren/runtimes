@@ -9,6 +9,7 @@ import time
 import boto3
 import tarfile
 from pywren import wrenutil
+import io
 
 # create anaconda environments for the supported python versions
 
@@ -162,12 +163,13 @@ PYWREN_INSTALL_CMD = 'pip install pywren --upgrade'
 @transform(build_runtime, suffix(".built.pickle"), ".success.pickle")
 def check_runtime(build_file, outfile):
 
-
     t1 = time.time()
     build_result = pickle.load(open(build_file, 'r'))
     tar_s3_url = build_result['runtime_tar_s3_url']
     runtime_name = build_result['runtime_name']
     build_config_file = build_result['infile']
+
+    print("testing {}".format(tar_s3_url))
 
     runtime_config_dict = runtimes.load_runtime_config(build_config_file)
 
@@ -184,9 +186,9 @@ def check_runtime(build_file, outfile):
                                Key=key_name)
     condatar = tarfile.open(
         mode="r:gz",
-        fileobj=wrenutil.WrappedStreamingBody(res['Body'], res['ContentLength']))
-
-    condatar.extractall("/tmp/foo")
+        fileobj=io.BytesIO(res['Body'].read()))
+    
+    condatar.extractall("/tmp/foo2")
     print "build_config_file=", build_config_file
     if os.path.split(build_config_file)[-1] in SKIP_RUN_TEST :
         print "skipping the test of", build_config_file

@@ -91,7 +91,8 @@ def launch(region = BUILDER_ENV['aws_region'],
 
 @task
 def setup_ami():
-    sudo('yum -y groupinstall "Development Tools" ')
+    sudo('yum -y -q groupinstall "Development Tools" ')
+    sudo('yum -y -q install cmake ')
 
 @task        
 def ssh():
