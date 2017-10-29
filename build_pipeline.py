@@ -30,7 +30,8 @@ CONFIG_FILES = ['minimal_2.7.yaml',
                 'datascience_3.6.yaml', 
                 'deep_cpu_3.6.yaml', 
                 'pytorch_gpu_master_3.6.yaml', 
-                'micro_3.6.yaml'
+                'micro_3.6.yaml',
+                'mri_3.6.yaml'
 ]
 
 # some runtimes are actually broken intentionally and should not
@@ -42,7 +43,8 @@ SKIP_RUN_TEST = ['too_big_do_not_use_2.7.yaml',
                  'deep_gpu_3.6.yaml', 
                  'deep_cpu_3.6.yaml',
                  'pytorch_gpu_master_3.6.yaml', 
-                 'micro_3.6.yaml'
+                 'micro_3.6.yaml',
+                 'mri_3.6.yaml',
 ] 
 
 
@@ -53,7 +55,8 @@ get_env_path = lambda x: os.path.abspath(os.path.join(LOCAL_TEST_ENV, x))
 DEPLOY_BUCKETS = ['pywren-public-us-west-1', 
                   'pywren-public-us-east-1', 
                   'pywren-public-us-west-2', 
-                  'pywren-public-us-east-2'
+                  'pywren-public-us-east-2', 
+                  'pywren-public-ap-northeast-2'
 ]
 
 DEPLOY_NUM_SHARDS = 100
@@ -74,6 +77,10 @@ DEPLOY_SHARD_LIMITS = {'deep_cpu_3.6' : {'buckets' : ['pywren-public-us-west-2']
                                               ['pywren-public-us-west-2'], 
                                               'shards' : 1}, 
                        'micro_3.6' : {'buckets' : 
+                                              ['pywren-public-us-west-2'], 
+                                              'shards' : 1}, 
+
+                       'mri_3.6' : {'buckets' : 
                                               ['pywren-public-us-west-2'], 
                                               'shards' : 1}, 
 

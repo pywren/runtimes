@@ -7,7 +7,7 @@ conda:
       - numpy
       - scipy
       - pillow
-      - [conda-forge, pyfftw]
+      #- [conda-forge, pyfftw]
       - h5py
 pip:
     install:
@@ -17,7 +17,6 @@ pip:
 
     upgrade:
       - cloudpickle
-      
 extracmds:
   # Big example files we don't actually need
   - "rm -Rf /tmp/condaruntime/lib/python3.6/site-packages/nibabel/nicom/tests/*"

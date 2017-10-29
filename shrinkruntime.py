@@ -18,7 +18,13 @@ def shrink_remove_non_avx2_mkl(conda_install_dir):
     # Additional things I may be able to delete
     # I think that everything here uses the ILP interface instead of the LP interface and so
     # the LP libraries can be deleted? 
-    run('find {}/lib -name "{}" -delete'.format(conda_install_dir, "*_lp64.so"))
+    #run('find {}/lib -name "{}" -delete'.format(conda_install_dir, "*_lp64.so"))
+    # nope this somehow causes a mkl error
+
+    # can we delete the thred libraries if we are not using icc or pgi? 
+    #run('find {}/lib -name "{}" -delete'.format(conda_install_dir, "*libmkl_intel_thread.so")) NOPE NEEDE FOR DOT SOMEHOW
+    run('find {}/lib -name "{}" -delete'.format(conda_install_dir, "*libmkl_pgi_thread.so"))
+    
 
 
 @task 
