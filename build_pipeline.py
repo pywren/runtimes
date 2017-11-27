@@ -30,6 +30,7 @@ CONFIG_FILES = ['minimal_2.7.yaml',
                 'datascience_3.6.yaml', 
                 'deep_cpu_3.6.yaml', 
                 'pytorch_gpu_master_3.6.yaml', 
+                'pytorch_gpu_master_v100_3.6.yaml', 
                 'micro_3.6.yaml',
                 'mri_3.6.yaml'
 ]
@@ -43,8 +44,9 @@ SKIP_RUN_TEST = ['too_big_do_not_use_2.7.yaml',
                  'deep_gpu_3.6.yaml', 
                  'deep_cpu_3.6.yaml',
                  'pytorch_gpu_master_3.6.yaml', 
+                 'pytorch_gpu_master_v100_3.6.yaml', 
                  'micro_3.6.yaml',
-                 'mri_3.6.yaml',
+                 'mri_3.6.yaml', 
 ] 
 
 
@@ -73,6 +75,8 @@ DEPLOY_SHARD_LIMITS = {'deep_cpu_3.6' : {'buckets' : ['pywren-public-us-west-2']
                                               'shards' : 1}, 
                        'pytorch_gpu_master_3.6' : {'buckets' : ['pywren-public-us-west-2'], 
                                               'shards' : 1}, 
+                       'pytorch_gpu_master_v100_3.6' : {'buckets' : ['pywren-public-us-west-2'], 
+                                                        'shards' : 1}, 
                        'deep_cpu_3.6' : {'buckets' : 
                                               ['pywren-public-us-west-2'], 
                                               'shards' : 1}, 
