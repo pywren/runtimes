@@ -32,7 +32,8 @@ CONFIG_FILES = ['minimal_2.7.yaml',
                 'pytorch_gpu_master_3.6.yaml', 
                 'pytorch_gpu_master_v100_3.6.yaml', 
                 'micro_3.6.yaml',
-                'mri_3.6.yaml'
+                'mri_3.6.yaml', 
+                'default_vaishaal_3.6.yaml'
 ]
 
 # some runtimes are actually broken intentionally and should not
