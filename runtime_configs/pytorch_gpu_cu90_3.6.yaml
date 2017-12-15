@@ -1,0 +1,20 @@
+pythonver: '3.6'
+miniconda_url: https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+include:
+  - default_3.6.yaml
+conda:
+    install:
+      - scikit-image
+      - mkl
+      - pandas
+      - setuptools
+      - cffi
+      - cmake
+      - [pytorch, cuda90]
+      - [pytorch, torchvision]
+      - [pytorch, pytorch]
+      
+pip:
+    install:
+      - cvxpy
+      - qpth
