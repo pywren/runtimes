@@ -24,6 +24,27 @@ def measure(phase_name):
     size_after  = get_size()
     phases.append((phase_name, size_before, size_after))
 
+def collapse_and_move_symlinks(root=".", dest="/tmp/conda_shared_objects/"):
+    if not os.path.exists(dest):
+        os.makedirs(dest)
+
+    root = os.path.abspath(root)
+    all_sos = glob2.glob(os.path.join(root, "**/*.so*"))
+    for so in all_sos:
+        if (not os.path.isfile(so)): continue
+        base = os.path.basename(so)
+        if (os.path.islink(so)):
+            real = os.readlink(so)
+            real = os.path.join(os.path.dirname(so), real)
+            print("Removing {0}".format(so))
+            os.remove(so)
+            print("Unsymlinking {0} to {1}".format(real, so))
+            os.rename(real, so)
+        dest_so = os.path.join(dest, base)
+        print(dest)
+        print("Moving {0} to {1}".format(so, dest_so))
+        os.rename(so, dest_so)
+
 
 with measure("conda clean"):
     subprocess.check_output("{}/bin/conda clean -y -i -t -p ".format(CONDA_RUNTIME), 
@@ -59,7 +80,10 @@ with measure("delete *.pyc"):
     for pyc_filename in glob2.glob("{}/**/*.pyc".format(CONDA_RUNTIME)):
         os.remove(pyc_filename)
 
-                            
+with measure("separate .sos"):
+    collapse_and_move_symlinks(CONDA_RUNTIME, CONDA_RUNTIME + ".lib")
+
+
 for phase, before, after in phases:
     print "{:18s} : {:6.1f}M   -> {:6.1f}M".format(phase, before/1e3, after/1e3)
 

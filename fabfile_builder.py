@@ -14,6 +14,7 @@ import json
 import runtimes
 import yaml
 import os
+import glob
 
 tgt_ami = 'ami-7172b611'
 region = 'us-west-2'
@@ -90,6 +91,33 @@ def shrink_conda(CONDA_RUNTIME_DIR):
     put("shrinkconda.py")
     run("python shrinkconda.py {}".format(CONDA_RUNTIME_DIR))
 
+
+def collapse_and_move_symlinks(root=".", dest="/tmp/conda_shared_objects/"):
+    if not os.path.exists(dest):
+        os.makedirs(dest)
+
+    root = os.path.abspath(root)
+    all_sos = glob.glob(os.path.join(root, "**/*.so*"))
+    for so in all_sos:
+        if (not os.path.isfile(so)): continue
+        base = os.path.basename(so)
+        if (os.path.islink(so)):
+            real = os.readlink(so)
+            real = os.path.join(os.path.dirname(so), real)
+            print("Removing {0}".format(so))
+            os.remove(so)
+            print("Unsymlinking {0} to {1}".format(real, so))
+            os.rename(real, so)
+        dest_so = os.path.join(dest, base)
+        print(dest)
+        print("Moving {0} to {1}".format(so, dest_so))
+        os.rename(so, dest_so)
+
+@task
+def remove_sos(CONDA_RUNTIME_DIR):
+    SO_DIR = CONDA_RUNTIME_DIR + "_SOS"
+    collapse_and_move_symlinks(CONDA_RUNTIME_DIR, SO_DIR)
+
 @task
 def terminate():
     ec2 = boto3.resource('ec2', region_name=AWS_REGION)
@@ -121,7 +149,6 @@ CONDA_INSTALL_DIR = "/tmp/condaruntime"
 def create_runtime(pythonver, 
                    conda_packages, pip_packages, 
                    pip_upgrade_packages):
-    
     conda_pkgs_default_channel = []
     conda_pkgs_custom_channel = []
     for c in conda_packages:
@@ -129,7 +156,6 @@ def create_runtime(pythonver,
             conda_pkgs_custom_channel.append(c)
         else:
             conda_pkgs_default_channel.append(c)
-            
     conda_default_pkg_str = " ".join(conda_pkgs_default_channel)
     pip_pkg_str = " ".join(pip_packages)
     pip_pkg_upgrade_str = " ".join(pip_upgrade_packages)
@@ -139,13 +165,13 @@ def create_runtime(pythonver,
     run("mkdir -p {}".format(CONDA_BUILD_DIR))
     with cd(CONDA_BUILD_DIR):
         run("wget https://repo.continuum.io/miniconda/Miniconda{}-latest-Linux-x86_64.sh -O miniconda.sh ".format(python_base_ver))
-        
         run("bash miniconda.sh -b -p {}".format(CONDA_INSTALL_DIR))
         with path("{}/bin".format(CONDA_INSTALL_DIR), behavior="prepend"):
             run("conda install -q -y python={}".format(pythonver))
             run("conda install -q -y {}".format(conda_default_pkg_str))
             for chan, pkg in conda_pkgs_custom_channel:
                 run("conda install -q -y -c {} {}".format(chan, pkg))
+            #run("pip install numpy")
             run("pip install {}".format(pip_pkg_str))
             run("pip install --upgrade {}".format(pip_pkg_upgrade_str))
 
@@ -154,23 +180,29 @@ def format_freeze_str(x):
     return [a.split("==") for a in packages]
 
 @task
-def package_all(s3url):
+def package_all(s3url, s3liburl):
     with cd(CONDA_INSTALL_DIR + "/../"):
         run("tar czf {} condaruntime".format(os.path.join(CONDA_BUILD_DIR, 'condaruntime.tar.gz')))
-            
     with cd(CONDA_BUILD_DIR):
         get("condaruntime.tar.gz", local_path="/tmp/condaruntime.tar.gz")
+        local("mkdir -p /tmp/condaruntime.lib")
+        get("/tmp/condaruntime.lib", local_path="/tmp/condaruntime.lib")
         local("aws s3 cp /tmp/condaruntime.tar.gz {}".format(s3url))
+        local("aws s3 sync /tmp/condaruntime.lib {} --acl \"public-read\"".format(s3liburl))
 
 
 def build_and_stage_runtime(runtime_name, runtime_config):
+        # Use a single url for staging
         python_ver = runtime_config['pythonver']
         conda_install = runtime_config['conda_install']
         pip_install = runtime_config['pip_install']
         pip_upgrade = runtime_config['pip_upgrade']
+        runtime_tar_gz, runtime_meta_json, runtime_lib = \
+            runtimes.get_staged_runtime_url(runtime_name, python_ver)
+        print(runtime_lib)
+        return
         execute(create_runtime, python_ver, conda_install,
                 pip_install, pip_upgrade)
-        execute(shrink_conda, CONDA_INSTALL_DIR)
         freeze_str = execute(get_runtime_pip_freeze, CONDA_INSTALL_DIR)
         freeze_str_single = freeze_str.values()[0] # HACK 
 
@@ -183,27 +215,33 @@ def build_and_stage_runtime(runtime_name, runtime_config):
         conda_env_yaml_single = conda_env_yaml.values()[0]  # HACK
         pickle.dump(conda_env_yaml_single, open("debug.pickle", 'w'))
         conda_env = yaml.load(conda_env_yaml_single)
+        execute(shrink_conda, CONDA_INSTALL_DIR)
+
         runtime_dict = {'python_ver' : python_ver, 
                         'conda_install' : conda_install,
                         'pip_install' : pip_install, 
                         'pip_upgrade' : pip_upgrade,
-                        'pkg_ver_list' : freeze_pkgs,
+                        'pkg_ver_list' : "",
                         'preinstalls' : preinstalls, 
-                        'conda_env_config': conda_env}
-        
-        # Use a single url for staging
-        runtime_tar_gz, runtime_meta_json = \
-            runtimes.get_staged_runtime_url(runtime_name, python_ver)
+                        'conda_env_config': "",
+                        'runtime_lib': runtime_lib}
+
 
         urls = [runtime_tar_gz]
         runtime_dict['urls'] = urls
 
-        execute(package_all, runtime_tar_gz)
+        execute(package_all, runtime_tar_gz, runtime_lib)
         with open('runtime.meta.json', 'w') as outfile:
             json.dump(runtime_dict, outfile)        
             outfile.flush()
 
         local("aws s3 cp runtime.meta.json {}".format(runtime_meta_json))
+
+@task
+def build_dlopen(runtime_name, runtime_python_version):
+    url = runtimes.get_runtime_lib_http_url(runtime_name, runtime_python_version)
+    put("preload.c")
+    run('gcc -Wall -fPIC -shared -o preload.so preload.c -ldl -lcurl -DBUCKET_URL=\\\\\\"{0}\\\\\\"'.format(url), shell_escape=False)
 
 @task
 def build_all_runtimes():
@@ -213,7 +251,7 @@ def build_all_runtimes():
             rc2['pythonver'] = pythonver
             build_and_stage_runtime(runtime_name, rc2)
 
-@task 
+@task
 def build_single_runtime(runtime_name, pythonver):
     rc = runtimes.RUNTIMES[runtime_name]
     rc2 = rc['packages'].copy()
@@ -233,19 +271,40 @@ def get_preinstalls(conda_install_dir):
 def get_conda_root_env(conda_install_dir):
     return run("{}/bin/conda env export -n root 2>/dev/null".format(conda_install_dir))
 
-def deploy_runtime(runtime_name, python_ver):
+@task
+def deploy_runtime(runtime_name, python_ver, num_shards=10):
     # move from staging to production
     staging_runtime_tar_gz, staging_runtime_meta_json \
         = runtimes.get_staged_runtime_url(runtime_name, python_ver)
 
-    runtime_tar_gz, runtime_meta_json = runtimes.get_runtime_url(runtime_name, 
-                                                                 python_ver)
+    # Always upload to the base tar gz url.
+    base_tar_gz = runtimes.get_runtime_url_from_staging(staging_runtime_tar_gz)
+    local("aws s3 cp {} {}".format(staging_runtime_tar_gz,
+                                   base_tar_gz))
 
-    local("aws s3 cp {} {}".format(staging_runtime_tar_gz, 
-                                   runtime_tar_gz))
+    runtime_meta_json_url = runtimes.get_runtime_url_from_staging(staging_runtime_meta_json)
+    # If required, generate the shard urls and update metadata
+    if num_shards > 1:
+        local("aws s3 cp {} runtime.meta.json".format(staging_runtime_meta_json))
+        meta_dict = json.load(open('runtime.meta.json', 'r'))
+        shard_urls = []
+        for shard_id in xrange(num_shards):
+            bucket_name, key = runtimes.split_s3_url(base_tar_gz)
+            shard_key = runtimes.get_s3_shard(key, shard_id)
+            hash_s3_key = runtimes.hash_s3_key(shard_key)
+            shard_url = "s3://{}/{}".format(bucket_name, hash_s3_key)
+            local("aws s3 cp {} {}".format(base_tar_gz, 
+                                           shard_url))
+            shard_urls.append(shard_url)
 
-    local("aws s3 cp {} {}".format(staging_runtime_meta_json, 
-                                   runtime_meta_json))
+        meta_dict['urls'] = shard_urls
+        with open('runtime.meta.json', 'w') as outfile:
+            json.dump(meta_dict, outfile)
+            outfile.flush()
+        local("aws s3 cp runtime.meta.json {}".format(runtime_meta_json_url))
+    else:
+        local("aws s3 cp {} {}".format(staging_runtime_meta_json,
+                                       runtime_meta_json_url))
 
 
 @task 
@@ -253,7 +312,7 @@ def deploy_runtimes(num_shards=10):
     num_shards = int(num_shards)
     for runtime_name, rc in runtimes.RUNTIMES.items():
         for python_ver in rc['pythonvers']:
-            staging_runtime_tar_gz, staging_runtime_meta_json \
+            staging_runtime_tar_gz, staging_runtime_meta_json, staging_runtime_lib \
                 = runtimes.get_staged_runtime_url(runtime_name, python_ver)
 
             # Always upload to the base tar gz url.

@@ -15,8 +15,8 @@ CONDA_DEFAULT_LIST = ["tblib",
 PIP_DEFAULT_LIST = ['glob2', 'boto', 'certifi']
 PIP_DEFAULT_UPGRADE_LIST = ['cloudpickle', 'enum34']
 
-CONDA_ML_SET = ['scipy', 'pillow', 'cvxopt', 'scikit-learn']
-PIP_ML_SET = ['cvxpy', 'redis']
+CONDA_ML_SET = ['scipy', 'scikit-learn']
+PIP_ML_SET = []
 
 CONDA_OPT_SET = ['scipy', 'cvxopt', ('mosek', 'mosek')]
 PIP_OPT_SET = ['cvxpy' ]
@@ -31,7 +31,7 @@ RUNTIMES = {'minimal' : {'pythonvers' : ["2.7", "3.5", "3.6"],
                         'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET, 
                         'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET, 
                         'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST }},
-            'default' : {'pythonvers' : ["2.7", "3.5", "3.6"], 
+            'default_dlopen_test' : {'pythonvers' : ["2.7", "3.5", "3.6"], 
                          'packages' : {
                              'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET, 
                              'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET, 
@@ -62,7 +62,7 @@ PIP_TEST_STRS = {"glob2" : "__import__('glob2')",
                  "redis" : "__import__('redis')", 
                  "certifi": "__import__('certifi')"}
 
-S3_BUCKET = "s3://ericmjonas-public"
+S3_BUCKET = "s3://pictureweb"
 S3URL_STAGING_BASE = S3_BUCKET + "/pywren.runtime.staging"
 S3URL_BASE = S3_BUCKET + "/pywren.runtime"
 
@@ -70,7 +70,14 @@ def get_staged_runtime_url(runtime_name, runtime_python_version):
     s3url = "{}/pywren_runtime-{}-{}".format(S3URL_STAGING_BASE, 
                                              runtime_python_version, runtime_name)
 
-    return s3url + ".tar.gz", s3url + ".meta.json"
+    return s3url + ".tar.gz", s3url + ".meta.json", s3url + ".lib"
+
+def get_runtime_lib_http_url(runtime_name, runtime_python_version):
+    region_base = "https://s3-us-west-2.amazonaws.com/"
+    s3url = "{}/pywren_runtime-{}-{}".format(region_base,
+                                             runtime_python_version, runtime_name)
+    return s3url
+
 
 def get_runtime_url_from_staging(staging_url):
     s3_url_base, s3_filename = os.path.split(staging_url)
