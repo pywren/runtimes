@@ -4,13 +4,13 @@ include:
   - minimal_3.6.yaml
 conda:
     install:
-      - numpy
+      - scipy==0.19.1 numpy==1.13.1 mkl==2017.0.4
       - numba
-      - scipy
 pip:
     install:
       - glob2
       - boto
+      - autograd
     upgrade:
       - cloudpickle
       - enum34

@@ -13,27 +13,31 @@ import io
 
 # create anaconda environments for the supported python versions
 
-CONFIG_FILES = ['minimal_2.7.yaml', 
-                'minimal_3.4.yaml',
-                'minimal_3.5.yaml', 
-                'minimal_3.6.yaml', 
-                'default_2.7.yaml',
-                'default_3.4.yaml',  
-                'default_3.5.yaml', 
-                'default_3.6.yaml',
-                'too_big_do_not_use_2.7.yaml', # FOR TESTING ONLY 
-                'too_big_do_not_use_3.4.yaml', # FOR TESTING ONLY 
-                'too_big_do_not_use_3.5.yaml', # FOR TESTING ONLY 
-                'too_big_do_not_use_3.6.yaml', # FOR TESTING ONLY,
-                'deep_gpu_3.6.yaml', 
-                #'deep_cpu_3.6.yaml',
-                'datascience_3.6.yaml', 
-                'deep_cpu_3.6.yaml', 
-                'pytorch_gpu_master_3.6.yaml', 
-                'pytorch_gpu_master_v100_3.6.yaml', 
-                'micro_3.6.yaml',
-                'mri_3.6.yaml', 
-                'default_vaishaal_3.6.yaml'
+CONFIG_FILES = [
+    # 'minimal_2.7.yaml', 
+    #             'minimal_3.4.yaml',
+    #             'minimal_3.5.yaml', 
+    #             'minimal_3.6.yaml', 
+    #             'default_2.7.yaml',
+    #             'default_3.4.yaml',  
+    #             'default_3.5.yaml', 
+    #             'default_3.6.yaml',
+    #             'too_big_do_not_use_2.7.yaml', # FOR TESTING ONLY 
+    #             'too_big_do_not_use_3.4.yaml', # FOR TESTING ONLY 
+    #             'too_big_do_not_use_3.5.yaml', # FOR TESTING ONLY 
+    #             'too_big_do_not_use_3.6.yaml', # FOR TESTING ONLY,
+    #             'deep_gpu_3.6.yaml', 
+    #             #'deep_cpu_3.6.yaml',
+    #             'datascience_3.6.yaml', 
+    #             'deep_cpu_3.6.yaml', 
+    #             'pytorch_gpu_master_3.6.yaml', 
+    #             'pytorch_gpu_master_v100_3.6.yaml', 
+    #             'micro_3.6.yaml',
+    #             'mri_3.6.yaml', 
+    #             'default_vaishaal_3.6.yaml', 
+    # 'opt_3.6.yaml'
+    'pytorch_gpu_cu90_3.6.yaml',
+    'pydata_3.6.yaml'
 ]
 
 # some runtimes are actually broken intentionally and should not
@@ -48,6 +52,9 @@ SKIP_RUN_TEST = ['too_big_do_not_use_2.7.yaml',
                  'pytorch_gpu_master_v100_3.6.yaml', 
                  'micro_3.6.yaml',
                  'mri_3.6.yaml', 
+                 'pytorch_gpu_cu90_3.6.yaml',
+                 'pydata_3.6.yaml'
+                 
 ] 
 
 
@@ -88,6 +95,15 @@ DEPLOY_SHARD_LIMITS = {'deep_cpu_3.6' : {'buckets' : ['pywren-public-us-west-2']
                        'mri_3.6' : {'buckets' : 
                                               ['pywren-public-us-west-2'], 
                                               'shards' : 1}, 
+
+                       'opt_3.6' : {'buckets' : 
+                                              ['pywren-public-us-west-2'], 
+                                              'shards' : 1},
+                       'pytorch_gpu_cu90_3.6' : {'buckets' : ['pywren-public-us-west-2'], 
+                                                 'shards' : 1}, 
+                       'pydata_3.6' : {'buckets' : ['pywren-public-us-west-2'], 
+                                                 'shards' : 1}, 
+
 
 }
 
