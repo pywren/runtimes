@@ -126,7 +126,7 @@ def merge_runtime_configs(config_list):
     
     for c in config_list[1:]:
         if 'conda' in c:
-            print dest_rc['conda']['install'], c['conda'].get('install', [])
+            print(dest_rc['conda']['install'], c['conda'].get('install', []))
             dest_rc['conda']['install'] += c['conda'].get('install', [])
             dest_rc['conda']['force'] += c['conda'].get('force', [])
         if 'pip' in c:

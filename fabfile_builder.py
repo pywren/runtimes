@@ -3,22 +3,26 @@ fab -f fabfile_builer.py -R builder conda_setup_mkl conda_clean package_all
 
 
 """
+from __future__ import print_function
 from fabric.api import local, env, run, put, cd, task, sudo, settings, warn_only, lcd, path, get, execute, hide
 from fabric.contrib import project
 import boto3
 import cloudpickle
 import json
 import base64
-import cPickle as pickle
+import pickle
 import json
 import runtimes
 import yaml
 import os
+import sys
 import copy
+import subprocess
 from shrinkruntime import * 
 from multiprocessing.pool import ThreadPool
 
 
+env.disable_known_hosts =True
 
 DEFAULT_BUILDER = {'aws_region' : None, 
                    'tgt_ami' : 'ami-7172b611', 
@@ -37,6 +41,10 @@ BUILDER_ENV.update(yaml.load(open("builder_config.yaml", 'r')))
 CONDA_BUILD_DIR = "/tmp/conda" 
 # this is where we actually install the runtime
 CONDA_INSTALL_DIR = "/tmp/condaruntime"
+
+if sys.platform == 'linux':
+   r = subprocess.check_output("docker port test_sshd 22", shell=True)
+   env.roledefs['d'] = ['ec2-user@{}'.format(r.decode('ascii').strip())]
 
 
 def tags_to_dict(d):
@@ -97,7 +105,7 @@ def setup_ami():
 @task        
 def ssh():
     if env.host_string == None:
-        print "no host found"
+        print("no host found")
     else:
         local("ssh -A " + env.host_string)
 
@@ -180,32 +188,36 @@ def build_runtime(config):
 def shrink_runtime():
     execute(shrink_conda_clean, CONDA_INSTALL_DIR)
     execute(shrink_remove_pkg, CONDA_INSTALL_DIR)
-    execute(shrink_remove_non_avx2_mkl, CONDA_INSTALL_DIR)
+    #execute(shrink_remove_non_avx2_mkl, CONDA_INSTALL_DIR)
     execute(shrink_strip_shared_libs, CONDA_INSTALL_DIR)
     execute(shrink_delete_pyc, CONDA_INSTALL_DIR)
     execute(shrink_delete_static_libs, CONDA_INSTALL_DIR)
     res = execute(get_runtime_size, CONDA_INSTALL_DIR)
-    print "The runtime is", int(res.values()[0])/1e3, "MB"
+    for k, v in res.items():
+        print("The runtime is", int(v)/1e3, "MB")
 
 
+def get_first(x):
+    for k, v in x.items():
+        return v
 
 def create_runtime_package_metadata(conda_install_dir):
 
     python_ver_str = execute(get_runtime_python_ver, conda_install_dir)
-    python_ver = python_ver_str.values()[0] # HACK 
+    python_ver = get_first(python_ver_str) # HACK 
     python_ver = python_ver.split(" ")[1]
     python_ver = ".".join(python_ver.split(".")[:2])
 
     freeze_str = execute(get_runtime_pip_freeze, conda_install_dir)
-    freeze_str_single = freeze_str.values()[0] # HACK 
+    freeze_str_single = get_first(freeze_str) # HACK 
 
     freeze_pkgs = format_freeze_str(freeze_str_single)
 
     preinstalls_str = execute(get_preinstalls, conda_install_dir)
-    preinstalls_str_single = preinstalls_str.values()[0]
+    preinstalls_str_single = get_first(preinstalls_str)
     preinstalls = json.loads(preinstalls_str_single)
     conda_env_yaml = execute(get_conda_root_env, conda_install_dir)
-    conda_env_yaml_single = conda_env_yaml.values()[0]  # HACK
+    conda_env_yaml_single = get_first(conda_env_yaml)  # HACK
 
     conda_env = yaml.load(conda_env_yaml_single)
     runtime_dict = {'python_ver' : python_ver, 
@@ -219,8 +231,9 @@ def tar_runtime(conda_install_dir, conda_build_dir):
     # FIXME this isn't totally install-dir agnostic
     out_tarball_path = os.path.abspath(os.path.join(conda_build_dir, 'condaruntime.tar.gz'))
     with cd(conda_install_dir + "/../"):
-        run("tar czf {} condaruntime".format(out_tarball_path))
+        run("tar czfS {} condaruntime".format(out_tarball_path))
     return out_tarball_path
+
 
 
 def put_runtime_url(tar_path, s3url):
@@ -236,7 +249,7 @@ def deploy_runtime_urls(runtime_tar_s3_url, runtime_meta_s3_url,
     
     # tar the runtime
     tar_path = tar_runtime(CONDA_INSTALL_DIR, CONDA_BUILD_DIR)
-
+    
     put_runtime_url(tar_path, runtime_tar_s3_url)
 
     # Write the metadata and stick on S3
@@ -285,7 +298,7 @@ def shard_runtime(s3_url_base_source, s3_url_base_dest,
 
     def copy_s3(source_bucket, source_key, 
              dest_bucket, dest_key):
-        print "copying", "s3://{}/{}".format(source_bucket, source_key), "to", "s3://{}/{}".format(dest_bucket, dest_key)
+        print("copying", "s3://{}/{}".format(source_bucket, source_key), "to", "s3://{}/{}".format(dest_bucket, dest_key))
 
         copy_source = {
             'Bucket': source_bucket,
@@ -296,7 +309,7 @@ def shard_runtime(s3_url_base_source, s3_url_base_dest,
     pool = ThreadPool(16)
 
     shard_urls = []
-    for shard_id in xrange(int(num_shards)):
+    for shard_id in range(int(num_shards)):
 
         shard_key = runtimes.get_s3_shard(dest_key_tar_gz, shard_id)
         hash_s3_key = runtimes.hash_s3_key(shard_key)
@@ -317,4 +330,126 @@ def shard_runtime(s3_url_base_source, s3_url_base_dest,
     local("aws s3 cp runtime.meta.json --region={} {}".format(dest_region, 
                                                               s3_url_base_dest + ".meta.json"))
 
+
+@task
+def backup_and_strip_sos(conda_build_dir, BACKUP_PATH = "/tmp/condaruntime.backup"):
+    # get all of the SOs that are big OR match some glob
+
+
+
+    # first create a backup, preserving the path
+    run("mkdir -p {}".format(BACKUP_PATH))
+    with cd(conda_build_dir):
+        for tgt_glob in ["*mkl*.so", "*Qt*.so.*", "*llvmlite.so"]:
+
+            run('find . -name "{}" -size +1M -exec cp --parents \{{\}} {} \;'.format(tgt_glob, BACKUP_PATH))
+
+            # use objcopy to copy them minus certain sections, and
+            for section in ['.text']: # don't know if these ones work -->  '.rodata', '.bss']:
+                run('find . -name "{}" -size +1M -exec objcopy --remove-section={} \{{\}}  \{{\}}  \;'.format(tgt_glob, section))
+
+
+
+    
+@task 
+def get_metadata(conda_install_dir, outfile="package.meta.json"):
+    d = create_runtime_package_metadata(conda_install_dir)
+    json.dump(d, open(outfile, 'w'), sort_keys=True, indent=4)
+    
+@task
+def file_remap_dir(CONDA_BUILD_DIR, conda_backup_dir, out_path):
+    mapping = {}
+    with cd(CONDA_BUILD_DIR):
+        a = run("find {} -type f".format(conda_backup_dir))
+        for path in a.splitlines():
+            k = os.path.relpath(path, conda_backup_dir)
+            mapping[k] = path
+    json.dump(mapping, open(out_path, 'w'), sort_keys=True, indent=4)
+
+
+def assemble_runtime(config_filename, meta_filename, 
+                     tar_filename, remapping_filename):
+    """
+    Create the meta.json but with paths to files instead of s3 urls
+    """
+
+    # load the runtime metadata
+    runtime_dict = json.load(open(meta_filename, 'r'))
+
+    # load the config data 
+    runtime_dict['runtime_config'] = yaml.load(config_filename)
+    
+    runtime_dict['urls'] = tar_filename    
+    runtime_dict['lib_mapping'] = json.load(open(remapping_filename, 'r'))
+
+    return runtime_dict
+
+@task
+def upload_runtime(runtime_filename, s3_url_base):
+    pass
+
+
+@task
+def test_tar_runtime():
+    
+    res = tar_runtime(CONDA_INSTALL_DIR, CONDA_BUILD_DIR)
+    print("res=", res)
+
+@task
+def test_deploy():
+
+
+    bucket_name = 'jonas-us-west-2'
+    runtime_s3_basekey = "runtimes/test8"
+
+    def tarfile_create_s3urls(bucket_name, runtime_s3_basekey):
+        return ["s3://{}/{}/runtime.tar.gz".format(bucket_name, runtime_s3_basekey)]
+
+    def mapping_create_s3urls(mapped_files, bucket_name, 
+                              runtime_s3_basekey):
+        out_map = {}
+        for k, vi in mapped_files.items():
+            out_map[k] = ["s3://{}/{}/mapped_files/{}".format(bucket_name, runtime_s3_basekey, k)]
+        return out_map
+    
+    def s3_puts(local_file, s3_urls):
+        for url in s3_urls:
+            local('aws s3 cp {} {}'.format(local_file, url))
+
+    config_filename = 'runtime_configs/default_3.6.yaml'
+    meta_filename = 'packages.json'
+    tar_filename = '/tmp/conda/condaruntime.tar.gz'
+    mapping_filename = 'mapping.json'
+
+    runtime_meta = assemble_runtime(config_filename, 
+                                        meta_filename, 
+                                        tar_filename, mapping_filename)
+    
+
+    ### Main Tarfile 
+    tar_filename = runtime_meta['urls'] 
+
+    tar_filename_local = get(tar_filename)[0]
+
+    tar_filename_s3_urls = tarfile_create_s3urls(bucket_name, 
+                                                 runtime_s3_basekey)
+    s3_puts(tar_filename_local, tar_filename_s3_urls)
+
+    runtime_meta['urls'] = tar_filename_s3_urls
+
+
+    ### mapped libraries
+    mapped_files = runtime_meta['lib_mapping']
+    mapped_s3_urls = mapping_create_s3urls(mapped_files, bucket_name, 
+                                         runtime_s3_basekey)
+
+    for path, remote_filename in mapped_files.items():
+        filename_local = get(remote_filename)[0]
+        s3_urls = mapped_s3_urls[path]
+        s3_puts(filename_local, s3_urls)
+    runtime_meta['lib_mapping'] = mapped_s3_urls
+    
+    # put the final file
+    json.dump(runtime_meta, open("meta.json", 'w'))
+    s3_puts("meta.json", ["s3://{}/{}/meta.json".format(bucket_name,runtime_s3_basekey)])
 

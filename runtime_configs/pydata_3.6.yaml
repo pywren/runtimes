@@ -19,6 +19,7 @@ pip:
       - glob2
       - boto
       - autograd
+      - cvxpy
     upgrade:
       - cloudpickle
       - enum34
