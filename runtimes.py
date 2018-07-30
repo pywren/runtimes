@@ -2,49 +2,28 @@ import os
 import hashlib
 
 
-CONDA_DEFAULT_LIST = ["tblib", 
-                      "numpy", 
-                      "pytest", 
-                      "Click", 
-                      "numba", 
-                      "boto3", 
-                      "PyYAML", 
+CONDA_DEFAULT_LIST = ["tblib",
+                      "pytest",
+                      "Click",
+                      "boto3",
+                      "PyYAML",
                       'six',
                       "cython", 'future']
 
-PIP_DEFAULT_LIST = ['glob2', 'boto', 'certifi']
+PIP_DEFAULT_LIST = ['glob2', 'boto3==1.6.17', 'redis', 'aiobotocore==0.6.0','aiohttp==3.1.1','sympy', 'botocore==1.9.23', 'dill', 'astor', 'nose']
 PIP_DEFAULT_UPGRADE_LIST = ['cloudpickle', 'enum34']
 
-CONDA_ML_SET = ['scipy', 'pillow', 'cvxopt', 'scikit-learn']
-PIP_ML_SET = ['cvxpy', 'redis']
+CONDA_ML_SET = ['scipy==0.18.1']
+PIP_ML_SET = []
 
 CONDA_OPT_SET = ['scipy', 'cvxopt', ('mosek', 'mosek')]
 PIP_OPT_SET = ['cvxpy' ]
 
-RUNTIMES = {'minimal' : {'pythonvers' : ["2.7", "3.5", "3.6"],  
-                         'packages' : { 
-                             'conda_install' : CONDA_DEFAULT_LIST, 
-                             'pip_install' : PIP_DEFAULT_LIST, 
-                             'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST}},
-            'ml' : {'pythonvers' :  ["2.7", "3.5", "3.6"],
-                    'packages' : {
-                        'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET, 
-                        'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET, 
-                        'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST }},
-            'default' : {'pythonvers' : ["2.7", "3.5", "3.6"], 
+RUNTIMES = { 'numpywren' : {'pythonvers' : ["3.6"], 
                          'packages' : {
                              'conda_install' : CONDA_DEFAULT_LIST + CONDA_ML_SET, 
                              'pip_install' : PIP_DEFAULT_LIST + PIP_ML_SET, 
-                             'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST}}, 
-            'opt' : {'pythonvers' : ["2.7"], 
-                         'packages' : {
-                             'conda_install' : CONDA_DEFAULT_LIST + CONDA_OPT_SET, 
-                             'pip_install' : PIP_DEFAULT_LIST + PIP_OPT_SET, 
-                             'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST }}
-
-}
-
-
+                             'pip_upgrade' : PIP_DEFAULT_UPGRADE_LIST}}}
 
 CONDA_TEST_STRS = {'numpy' : "__import__('numpy')", 
                    'pytest' : "__import__('pytest')", 
@@ -62,7 +41,7 @@ PIP_TEST_STRS = {"glob2" : "__import__('glob2')",
                  "redis" : "__import__('redis')", 
                  "certifi": "__import__('certifi')"}
 
-S3_BUCKET = "s3://ericmjonas-public"
+S3_BUCKET = "s3://pictureweb"
 S3URL_STAGING_BASE = S3_BUCKET + "/pywren.runtime.staging"
 S3URL_BASE = S3_BUCKET + "/pywren.runtime"
 
