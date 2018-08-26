@@ -1,12 +1,14 @@
-#script to shrink conda install
 import sys
 import subprocess
 import glob
 import shutil
 import os
 import glob2
+import boto3
 
 from contextlib import contextmanager
+fblas_url = "s3://numpywrenpublic/patched_sos/_fblas.so"
+
 
 
 CONDA_RUNTIME = sys.argv[1]
@@ -20,13 +22,13 @@ phases = []
 @contextmanager
 def measure(phase_name):
     size_before = get_size()
-    yield 
+    yield
     size_after  = get_size()
     phases.append((phase_name, size_before, size_after))
 
 
 with measure("conda clean"):
-    subprocess.check_output("{}/bin/conda clean -y -i -t -p ".format(CONDA_RUNTIME), 
+    subprocess.check_output("{}/bin/conda clean -y -i -t -p ".format(CONDA_RUNTIME),
                                                               shell=True)
 
 with measure("elimate pkg"):
@@ -34,7 +36,7 @@ with measure("elimate pkg"):
 
 with measure("delete non-avx2 mkl"):
     # for AVX
-    for g in ["*_mc.so", "*_mc2.so",  "*_mc3.so",  "*_avx512*", "*mpi*so", "*libmkl_ao_worker.so", "*scalapack*", "*thread.so", "*libmkl_gf_ilp64.so", "*libmkl_gf_lp64.so", "*libmkl_sequential.so"]:
+    for g in ["*_mc.so", "*_mc2.so",  "*_mc3.so",  "*_avx512*", "*_avx.*", "*mpi*so", "*libmkl_ao_worker.so", "*scalapack*", "*thread.so", "*libmkl_gf_ilp64.so", "*libmkl_gf_lp64.so", "*libmkl_sequential.so"]:
         for f in glob2.glob(CONDA_RUNTIME + "/lib/" + g):
             if ("libmkl_intel_thread.so" in f): continue
             print "removing", f
@@ -45,21 +47,25 @@ with measure("delete non-avx2 mkl"):
 with measure("strip shared libs (gcc)"):
 
     for so_filename in glob2.glob("{}/**/*.so".format(CONDA_RUNTIME)):
-        try: 
+        if ("_imaging.cpython" in so_filename): continue
+        try:
             print "stripping", so_filename
             o = subprocess.check_output("strip --strip-all {}".format(so_filename), shell=True)
         except subprocess.CalledProcessError as e:
             print "whoops", so_filename
             pass
 
-
-
 with measure("delete *.pyc"):
 
     for pyc_filename in glob2.glob("{}/**/*.pyc".format(CONDA_RUNTIME)):
         os.remove(pyc_filename)
 
-                            
+with measure("patch fblas"):
+    for so_filename in glob2.glob("{}/**/*fblas*.so".format(CONDA_RUNTIME)):
+        print(so_filename)
+        subprocess.check_output("aws s3 cp {0} {1}".format(fblas_url, so_filename), shell=True)
+
+
 for phase, before, after in phases:
     print "{:18s} : {:6.1f}M   -> {:6.1f}M".format(phase, before/1e3, after/1e3)
 
