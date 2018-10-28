@@ -170,7 +170,7 @@ def build_and_stage_runtime(runtime_name, runtime_config):
         pip_upgrade = runtime_config['pip_upgrade']
         execute(create_runtime, python_ver, conda_install,
                 pip_install, pip_upgrade)
-        execute(shrink_conda, CONDA_INSTALL_DIR)
+        #execute(shrink_conda, CONDA_INSTALL_DIR)
         freeze_str = execute(get_runtime_pip_freeze, CONDA_INSTALL_DIR)
         freeze_str_single = freeze_str.values()[0] # HACK 
 
