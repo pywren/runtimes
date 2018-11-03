@@ -10,7 +10,7 @@ CONDA_DEFAULT_LIST = ["tblib",
                       "boto3",
                       "PyYAML",
                       'six',
-                      "cython", 'future', ('pytorch', 'pytorch-cpu'), ('pytorch','torchvision-cpu')]
+                      "cython", 'future', ('pytorch', 'pytorch-cpu'), ('pytorch','torchvision-cpu'), 'scikit-image']
 
 
 
