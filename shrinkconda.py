@@ -33,10 +33,10 @@ with measure("elimate pkg"):
     subprocess.check_output("rm -Rf {}/pkgs ".format(CONDA_RUNTIME), shell=True)
 
 with measure("delete non-avx2 mkl"):
-
     # for AVX
-    for g in ["*_mc.so", "*_mc2.so",  "*_mc3.so",  "*_avx512*", "*_avx.*"]:
+    for g in ["*_mc.so", "*_mc2.so",  "*_mc3.so",  "*_avx512*", "*mpi*so", "*libmkl_ao_worker.so", "*scalapack*", "*thread.so", "*libmkl_gf_ilp64.so", "*libmkl_gf_lp64.so", "*libmkl_sequential.so"]:
         for f in glob2.glob(CONDA_RUNTIME + "/lib/" + g):
+            if ("libmkl_intel_thread.so" in f): continue
             print "removing", f
             os.remove(f)
     shutil.rmtree("/tmp/conda/condaruntime/pkgs/mkl-11.3.3-0/", ignore_errors=True)
