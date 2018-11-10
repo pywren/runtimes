@@ -34,7 +34,7 @@ with measure("elimate pkg"):
 
 with measure("delete non-avx2 mkl"):
     # for AVX
-    for g in ["*_mc.so", "*_mc2.so",  "*_mc3.so",  "*_avx512*", "*mpi*so", "*libmkl_ao_worker.so", "*scalapack*", "*thread.so", "*libmkl_gf_ilp64.so", "*libmkl_gf_lp64.so", "*libmkl_sequential.so"]:
+    for g in ["*_mc.so", "*_mc2.so",  "*_mc3.so", "*_avx.*", "*_avx512*", "*mpi*so", "*libmkl_ao_worker.so", "*scalapack*", "*thread.so", "*libmkl_gf_ilp64.so", "*libmkl_gf_lp64.so", "*libmkl_sequential.so"]:
         for f in glob2.glob(CONDA_RUNTIME + "/lib/" + g):
             if ("libmkl_intel_thread.so" in f): continue
             print "removing", f
@@ -52,6 +52,17 @@ with measure("strip shared libs (gcc)"):
             print "whoops", so_filename
             pass
 
+with measure("remove doc"):
+    shutil.rmtree(CONDA_RUNTIME +  "/share/doc/")
+    os.mkdir(CONDA_RUNTIME +  "/share/doc/")
+
+with measure("remove man"):
+    shutil.rmtree(CONDA_RUNTIME +  "/share/man/")
+    os.mkdir(CONDA_RUNTIME +  "/share/man/")
+
+with measure("remove data"):
+    shutil.rmtree(CONDA_RUNTIME +  "/share/terminfo/")
+    os.mkdir(CONDA_RUNTIME +  "/share/terminfo/")
 
 
 with measure("delete *.pyc"):
@@ -59,7 +70,6 @@ with measure("delete *.pyc"):
     for pyc_filename in glob2.glob("{}/**/*.pyc".format(CONDA_RUNTIME)):
         os.remove(pyc_filename)
 
-                            
 for phase, before, after in phases:
     print "{:18s} : {:6.1f}M   -> {:6.1f}M".format(phase, before/1e3, after/1e3)
 

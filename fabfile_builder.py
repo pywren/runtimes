@@ -1,6 +1,5 @@
 """
-fab -f fabfile_builer.py -R builder conda_setup_mkl conda_clean package_all
-
+fab -f fabfile_builer.py -R builder conda_setup_mkl conda_clean package_all 
 
 """
 from fabric.api import local, env, run, put, cd, task, sudo, settings, warn_only, lcd, path, get, execute
@@ -88,6 +87,7 @@ def install_gist():
 @task
 def shrink_conda(CONDA_RUNTIME_DIR):
     put("shrinkconda.py")
+    run("pip install glob2")
     run("python shrinkconda.py {}".format(CONDA_RUNTIME_DIR))
 
 @task
@@ -160,7 +160,7 @@ def package_all(s3url):
             
     with cd(CONDA_BUILD_DIR):
         get("condaruntime.tar.gz", local_path="/tmp/condaruntime.tar.gz")
-        local("aws s3 cp /tmp/condaruntime.tar.gz {}".format(s3url))
+        local("aws --profile pywren s3 cp /tmp/condaruntime.tar.gz {}".format(s3url))
 
 
 def build_and_stage_runtime(runtime_name, runtime_config):
@@ -203,7 +203,7 @@ def build_and_stage_runtime(runtime_name, runtime_config):
             json.dump(runtime_dict, outfile)        
             outfile.flush()
 
-        local("aws s3 cp runtime.meta.json {}".format(runtime_meta_json))
+        local("aws --profile pywren s3 cp runtime.meta.json {}".format(runtime_meta_json))
 
 @task
 def build_all_runtimes():
@@ -241,15 +241,15 @@ def deploy_runtime(runtime_name, python_ver):
     runtime_tar_gz, runtime_meta_json = runtimes.get_runtime_url(runtime_name, 
                                                                  python_ver)
 
-    local("aws s3 cp {} {}".format(staging_runtime_tar_gz, 
+    local("aws --profile pywren s3 cp {} {}".format(staging_runtime_tar_gz, 
                                    runtime_tar_gz))
 
-    local("aws s3 cp {} {}".format(staging_runtime_meta_json, 
+    local("aws --profile pywren s3 cp {} {}".format(staging_runtime_meta_json, 
                                    runtime_meta_json))
 
 
 @task 
-def deploy_runtimes(num_shards=10):
+def deploy_runtimes(num_shards=10, target_bucket=None):
     num_shards = int(num_shards)
     for runtime_name, rc in runtimes.RUNTIMES.items():
         for python_ver in rc['pythonvers']:
@@ -258,21 +258,28 @@ def deploy_runtimes(num_shards=10):
 
             # Always upload to the base tar gz url.
             base_tar_gz = runtimes.get_runtime_url_from_staging(staging_runtime_tar_gz)
-            local("aws s3 cp {} {}".format(staging_runtime_tar_gz,
-                                           base_tar_gz))
+            if (target_bucket is None):
+                local("aws --profile pywren s3 cp {} {}".format(staging_runtime_tar_gz, base_tar_gz))
+            else:
+                bucket_name, key = runtimes.split_s3_url(base_tar_gz)
+                local("aws --profile pywren s3 cp {} s3://{}/{} --acl public-read".format(staging_runtime_tar_gz, target_bucket, key))
 
             runtime_meta_json_url = runtimes.get_runtime_url_from_staging(staging_runtime_meta_json)
             # If required, generate the shard urls and update metadata
             if num_shards > 1:
-                local("aws s3 cp {} runtime.meta.json".format(staging_runtime_meta_json))
+                local("aws --profile pywren s3 cp {} runtime.meta.json --acl public-read".format(staging_runtime_meta_json))
                 meta_dict = json.load(open('runtime.meta.json', 'r'))
                 shard_urls = []
                 for shard_id in xrange(num_shards):
                     bucket_name, key = runtimes.split_s3_url(base_tar_gz)
                     shard_key = runtimes.get_s3_shard(key, shard_id)
                     hash_s3_key = runtimes.hash_s3_key(shard_key)
-                    shard_url = "s3://{}/{}".format(bucket_name, hash_s3_key)
-                    local("aws s3 cp {} {}".format(base_tar_gz, 
+                    if (target_bucket is None):
+                        shard_url = "s3://{}/{}".format(bucket_name, hash_s3_key)
+                    else:
+                        shard_url = "s3://{}/{}".format(target_bucket, hash_s3_key)
+
+                    local("aws --profile pywren s3 cp {} {}".format(base_tar_gz, 
                                                    shard_url))
                     shard_urls.append(shard_url)
 
@@ -280,7 +287,7 @@ def deploy_runtimes(num_shards=10):
                 with open('runtime.meta.json', 'w') as outfile:
                     json.dump(meta_dict, outfile)
                     outfile.flush()
-                local("aws s3 cp runtime.meta.json {}".format(runtime_meta_json_url))
+                local("aws --profile pywren s3 cp runtime.meta.json {} --acl public-read".format(runtime_meta_json_url))
             else:
-                local("aws s3 cp {} {}".format(staging_runtime_meta_json,
+                local("aws --profile pywren s3 cp {} {} --acl public-read".format(staging_runtime_meta_json,
                                                runtime_meta_json_url))
