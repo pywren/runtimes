@@ -10,11 +10,11 @@ CONDA_DEFAULT_LIST = ["tblib",
                       "boto3",
                       "PyYAML",
                       'six',
-                      "cython", 'future', ('pytorch', 'pytorch-cpu'), ('pytorch','torchvision-cpu'), 'scikit-image']
+                      "cython", 'future', ('pytorch', 'pytorch'), ('pytorch','torchvision'), 'scikit-image']
 
 
 
-PIP_DEFAULT_LIST = ['glob2', 'boto', 'certifi', 'tensorboard', 'tensorboardx', 'tensorflow', 'scikit-learn', 'cvxpy', 'cvxopt']
+PIP_DEFAULT_LIST = ['glob2', 'boto', 'certifi', 'tensorboard', 'tensorboardx', 'scikit-learn', 'cvxpy', 'cvxopt', 'psycopg2-binary', 'sqlalchemy']
 PIP_DEFAULT_UPGRADE_LIST = ['cloudpickle', 'enum34']
 
 CONDA_ML_SET = ['scipy', 'pillow', 'cvxopt', 'scikit-learn']
@@ -23,7 +23,7 @@ PIP_ML_SET = ['cvxpy', 'redis']
 CONDA_OPT_SET = ['scipy', 'cvxopt', ('mosek', 'mosek')]
 PIP_OPT_SET = ['cvxpy' ]
 
-RUNTIMES = {'robustcifar' : {'pythonvers' : ["3.6"],
+RUNTIMES = {'robustcifar_attack' : {'pythonvers' : ["3.7"],
                          'packages' : {
                              'conda_install' : CONDA_DEFAULT_LIST,
                              'pip_install' : PIP_DEFAULT_LIST,

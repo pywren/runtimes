@@ -84,7 +84,8 @@ def install_gist():
                 run("sed -i '1s/^/#define M_PI 3.1415926535897\\n /' lear_gist-1.2/gist.c")
                 run("CFLAGS=-std=c99 /tmp/conda/condaruntime/bin/python setup.py build_ext -I /tmp/conda/condaruntime/include/ -L /tmp/conda/condaruntime/lib/")
                 run("CFLAGS=-std=c99 /tmp/conda/condaruntime/bin/python setup.py install")
-            
+
+
 @task
 def shrink_conda(CONDA_RUNTIME_DIR):
     put("shrinkconda.py")
@@ -146,6 +147,9 @@ def create_runtime(pythonver,
             run("conda install -q -y {}".format(conda_default_pkg_str))
             for chan, pkg in conda_pkgs_custom_channel:
                 run("conda install -q -y -c {} {}".format(chan, pkg))
+            run('wget https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.11.0-cp36-cp36m-linux_x86_64.whl')
+            run('cp tensorflow-1.11.0-cp36-cp36m-linux_x86_64.whl tensorflow-1.11.0-cp37-cp37m-linux_x86_64.whl')
+            run('pip install tensorflow-1.11.0-cp37-cp37m-linux_x86_64.whl')
             run("pip install {}".format(pip_pkg_str))
             run("pip install --upgrade {}".format(pip_pkg_upgrade_str))
 
