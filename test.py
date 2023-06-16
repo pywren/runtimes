@@ -5,7 +5,7 @@ import base64
 import pickle
 import os
 
-from fabfile_builder import shrink_conda
+from builder import shrink_conda
 
 CONDA_BUILD_DIR = "/tmp/conda"
 CONDA_INSTALL_DIR = os.path.join(CONDA_BUILD_DIR, "condaruntime")
