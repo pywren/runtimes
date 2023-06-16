@@ -37,15 +37,9 @@ def create_runtime(pythonver,
     conda_default_pkg_str = " ".join(conda_pkgs_default_channel)
     pip_pkg_str = " ".join(pip_packages)
     pip_pkg_upgrade_str = " ".join(pip_upgrade_packages)
-    python_base_ver = pythonver.split(".")[0]
-    #os.system("rm -Rf {}".format(CONDA_BUILD_DIR))
-    #os.system("rm -Rf {}".format(CONDA_INSTALL_DIR))
-    #os.system("mkdir -p {}".format(CONDA_BUILD_DIR))
     old_pwd = os.getcwd()
 
     os.chdir(CONDA_BUILD_DIR)
-    #os.system("wget https://repo.continuum.io/miniconda/Miniconda{}-latest-Linux-x86_64.sh -O miniconda.sh ".format(python_base_ver))
-    #os.system("bash miniconda.sh -b -p {}".format(CONDA_INSTALL_DIR))
     # TODO: Allow multiple package builds (aka change env name)
     env_name = pythonver
     os.system("{}/bin/conda create -y --name {}".format(CONDA_BUILD_DIR, env_name))
