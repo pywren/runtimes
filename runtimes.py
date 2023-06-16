@@ -2,18 +2,10 @@ import os
 import hashlib
 
 
-CONDA_DEFAULT_LIST = ["tblib",
-                      "numpy",
-                      "pytest",
-                      "Click",
-                      "numba",
-                      "PyYAML",
-                      "six",
-                      "cython",
-                      "future"]
+CONDA_DEFAULT_LIST = ["tblib", "six"]
 
-PIP_DEFAULT_LIST = ['glob2', 'certifi', 'pandas']
-PIP_DEFAULT_UPGRADE_LIST = ['cloudpickle', 'enum34']
+PIP_DEFAULT_LIST = ['pandas', "boto3", "glob2", "certifi"]
+PIP_DEFAULT_UPGRADE_LIST = ['cloudpickle']
 
 CONDA_ML_SET = ['scipy', 'pillow', 'cvxopt', 'scikit-learn']
 PIP_ML_SET = ['cvxpy', 'redis']

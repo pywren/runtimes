@@ -3,10 +3,7 @@ fab -f fabfile_builer.py -R builder conda_setup_mkl conda_clean package_all
 
 
 """
-import boto3
-import cloudpickle
 import json
-import base64
 import pickle
 import json
 import runtimes
@@ -17,40 +14,17 @@ import subprocess
 def tags_to_dict(d):
     return {a['Key'] : a['Value'] for a in d}
 
-def install_gist():
-    """
-    https://github.com/yuichiroTCY/lear-gist-python
-    """
-    old_pwd = os.getcwd()
-
-    os.chdir("/tmp")
-    os.system("yum install -q -y  git gcc g++ make") # might have to execute with sudo
-    os.system("rm -Rf gist")
-    os.system("mkdir gist")
-
-    os.chdir("gist")
-    os.system("git clone https://github.com/yuichiroTCY/lear-gist-python")
-
-    os.chdir("lear-gist-python")
-    os.system("/tmp/conda/condaruntime/bin/conda install -q -y -c menpo fftw=3.3.4")
-    os.system("sh download-lear.sh")
-    os.system("sed -i '1s/^/#define M_PI 3.1415926535897\\n /' lear_gist-1.2/gist.c")
-    os.system("CFLAGS=-std=c99 /tmp/conda/condaruntime/bin/python setup.py build_ext -I /tmp/conda/condaruntime/include/ -L /tmp/conda/condaruntime/lib/")
-    os.system("CFLAGS=-std=c99 /tmp/conda/condaruntime/bin/python setup.py install")
-    os.chdir(old_pwd)
-
-def shrink_conda(CONDA_RUNTIME_DIR):
-    os.system("python3.7 shrinkconda.py {}".format(CONDA_RUNTIME_DIR))
-
+def shrink_conda(conda_base_dir ,CONDA_RUNTIME_DIR):
+    os.system("python3.7 shrinkconda.py {} {}".format(conda_base_dir, CONDA_RUNTIME_DIR))
 
 
 CONDA_BUILD_DIR = "/tmp/conda"
-CONDA_INSTALL_DIR = "/tmp/condaruntime"
+CONDA_INSTALL_DIR = "/tmp/conda/envs"
 
 
 def create_runtime(pythonver,
                    conda_packages, pip_packages,
-                   pip_upgrade_packages):
+                   pip_upgrade_packages, conda_env_dir):
 
     conda_pkgs_default_channel = []
     conda_pkgs_custom_channel = []
@@ -64,31 +38,34 @@ def create_runtime(pythonver,
     pip_pkg_str = " ".join(pip_packages)
     pip_pkg_upgrade_str = " ".join(pip_upgrade_packages)
     python_base_ver = pythonver.split(".")[0]
-    os.system("rm -Rf {}".format(CONDA_BUILD_DIR))
-    os.system("rm -Rf {}".format(CONDA_INSTALL_DIR))
-    os.system("mkdir -p {}".format(CONDA_BUILD_DIR))
+    #os.system("rm -Rf {}".format(CONDA_BUILD_DIR))
+    #os.system("rm -Rf {}".format(CONDA_INSTALL_DIR))
+    #os.system("mkdir -p {}".format(CONDA_BUILD_DIR))
     old_pwd = os.getcwd()
 
     os.chdir(CONDA_BUILD_DIR)
-    os.system("wget https://repo.continuum.io/miniconda/Miniconda{}-latest-Linux-x86_64.sh -O miniconda.sh ".format(python_base_ver))
-    os.system("bash miniconda.sh -b -p {}".format(CONDA_INSTALL_DIR))
-    os.system("{}/bin/conda install -q -y python={}".format(CONDA_INSTALL_DIR,pythonver))
-    os.system("{}/bin/conda install -q -y {}".format(CONDA_INSTALL_DIR,conda_default_pkg_str))
+    #os.system("wget https://repo.continuum.io/miniconda/Miniconda{}-latest-Linux-x86_64.sh -O miniconda.sh ".format(python_base_ver))
+    #os.system("bash miniconda.sh -b -p {}".format(CONDA_INSTALL_DIR))
+    # TODO: Allow multiple package builds (aka change env name)
+    env_name = pythonver
+    os.system("{}/bin/conda create -y --name {}".format(CONDA_BUILD_DIR, env_name))
+    os.system("{}/bin/conda install -n {} -q -y python={}".format(CONDA_BUILD_DIR, env_name, pythonver))
+    os.system("{}/bin/conda install -n {} -q -y {}".format(CONDA_BUILD_DIR, env_name, conda_default_pkg_str))
     for chan, pkg in conda_pkgs_custom_channel:
-        os.system("{}/bin/conda install -q -y -c {} {}".format(CONDA_INSTALL_DIR, chan, pkg))
-    os.system("{}/bin/pip install {}".format(CONDA_INSTALL_DIR, pip_pkg_str))
-    os.system("{}/bin/pip install --upgrade {}".format(CONDA_INSTALL_DIR, pip_pkg_upgrade_str))
+        os.system("{}/bin/conda install -n {} -q -y -c {} {}".format(CONDA_BUILD_DIR, env_name, chan, pkg))
+    os.system("{}/bin/pip install {}".format(conda_env_dir, pip_pkg_str))
+    os.system("{}/bin/pip install --upgrade {}".format(conda_env_dir, pip_pkg_upgrade_str))
     os.chdir(old_pwd)
 
 def format_freeze_str(x):
     packages = x.splitlines()
     return [a.split("==") for a in packages]
 
-def package_all(s3url):
+def package_all(s3url, env_install_dir):
     old_cwd = os.getcwd()
 
-    os.chdir(CONDA_INSTALL_DIR + "/../")
-    os.system("tar czf {} condaruntime".format(os.path.join(CONDA_BUILD_DIR, 'condaruntime.tar.gz')))
+    os.chdir(env_install_dir)
+    os.system("tar czf {} *".format(os.path.join(CONDA_BUILD_DIR, 'condaruntime.tar.gz')))
 
     os.system("aws s3 cp {} {}".format(os.path.join(CONDA_BUILD_DIR, 'condaruntime.tar.gz'), s3url))
     os.chdir(old_cwd)
@@ -98,16 +75,19 @@ def build_and_stage_runtime(runtime_name, runtime_config):
         conda_install = runtime_config['conda_install']
         pip_install = runtime_config['pip_install']
         pip_upgrade = runtime_config['pip_upgrade']
+
+        env_name = python_ver
+        env_install_dir = CONDA_INSTALL_DIR + "/" + env_name
         create_runtime(python_ver, conda_install,
-                pip_install, pip_upgrade)
-        shrink_conda(CONDA_INSTALL_DIR)
-        freeze_str = get_runtime_pip_freeze(CONDA_INSTALL_DIR)
+                pip_install, pip_upgrade, env_install_dir)
+        shrink_conda(CONDA_BUILD_DIR ,env_install_dir)
+        freeze_str = get_runtime_pip_freeze(env_install_dir)
 
         freeze_pkgs = format_freeze_str(freeze_str)
 
-        preinstalls_str = get_preinstalls(CONDA_INSTALL_DIR)
+        preinstalls_str = get_preinstalls(env_install_dir)
         preinstalls = json.loads(preinstalls_str)
-        conda_env_yaml = get_conda_root_env(CONDA_INSTALL_DIR)
+        conda_env_yaml = get_conda_root_env(CONDA_BUILD_DIR, env_name)
         pickle.dump(conda_env_yaml, open("debug.pickle", 'wb'))
         conda_env = yaml.load(conda_env_yaml, yaml.Loader)
         runtime_dict = {'python_ver' : python_ver,
@@ -125,7 +105,7 @@ def build_and_stage_runtime(runtime_name, runtime_config):
         urls = [runtime_tar_gz]
         runtime_dict['urls'] = urls
 
-        package_all(runtime_tar_gz)
+        package_all(runtime_tar_gz, env_install_dir)
         with open('runtime.meta.json', 'w') as outfile:
             json.dump(runtime_dict, outfile)
             outfile.flush()
@@ -145,16 +125,16 @@ def build_single_runtime(runtime_name, pythonver):
     rc2['pythonver'] = pythonver
     build_and_stage_runtime(runtime_name, rc2)
 
-def get_runtime_pip_freeze(conda_install_dir):
-    out = subprocess.run(["{}/bin/pip".format(conda_install_dir), "list", "--format=freeze"], stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
+def get_runtime_pip_freeze(conda_env_install_dir):
+    out = subprocess.run(["{}/bin/pip".format(conda_env_install_dir), "list", "--format=freeze"], stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
     return out.stdout.decode("utf-8")
 
-def get_preinstalls(conda_install_dir):
-    out = subprocess.run(["{}/bin/python".format(conda_install_dir),"-c", "import pkgutil;import json;print(json.dumps([(mod, is_pkg) for _, mod, is_pkg in pkgutil.iter_modules()]))"],stdout=subprocess.PIPE)
+def get_preinstalls(conda_env_install_dir):
+    out = subprocess.run(["{}/bin/python".format(conda_env_install_dir),"-c", "import pkgutil;import json;print(json.dumps([(mod, is_pkg) for _, mod, is_pkg in pkgutil.iter_modules()]))"],stdout=subprocess.PIPE)
     return out.stdout.decode("utf-8")
 
-def get_conda_root_env(conda_install_dir):
-    out = subprocess.run(["{}/bin/conda".format(conda_install_dir), "env", "export", "-n", "root"], stderr=subprocess.DEVNULL,stdout=subprocess.PIPE)
+def get_conda_root_env(conda_base_dir, env_name):
+    out = subprocess.run(["{}/bin/conda".format(conda_base_dir), "env", "export", "-n", env_name], stderr=subprocess.DEVNULL,stdout=subprocess.PIPE)
     return out.stdout.decode("utf-8")
 
 def deploy_runtime(runtime_name, python_ver):

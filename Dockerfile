@@ -10,12 +10,12 @@ RUN ./configure --enable-optimizations
 RUN make install
 RUN rm /usr/src/Python-3.7.11.tgz
 
-#ENV CONDA_DIR /opt/conda
+ENV CONDA_DIR /opt/conda
 
-#RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-#    /bin/bash ~/miniconda.sh -b -p /opt/conda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /tmp/conda
 
-#ENV PATH=$CONDA_DIR/bin:$PATH
+ENV PATH=$CONDA_DIR/bin:$PATH
 RUN python3.7 -m pip install --upgrade pip
 RUN python3.7 -m pip install boto3 cloudpickle pyaml glob2
 
