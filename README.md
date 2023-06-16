@@ -1,18 +1,15 @@
-PyWren runtime builders
+# PyWren runtime builders
 
-To build all the runtimes in `runtimes.py` on the aws machine
-`builder` and put them on the staging server: 
+Forked from [PyWren/runtimes](https://github.com/pywren/runtimes).
+Rebuilt, to be executed locally on a docker container.
 
-```
-fab -f fabfile_builder.py -R builder build_all_runtimes 
-```
+To build and upload all the runtimes in `runtimes.py` on your docker container:
 
-To test, push the repo to github, which will trigger a travis build pointing
-at the staged runtimes. 
+1. Modify `S3_BUCKET` & `S3URL_BASE = S3_BUCKET + "/pywren.runtime"`, so that they fit your `.pywren_config`-runtime.
+2. Change the dependencies in `runtimes.py` to whatever is required.
+3. Build the docker image `docker build -t runtimes .` from the base of this repository.
+4. Run the docker image `docker run -it runtimes bash`.
+5. Expose your AWS credentials in the container (e.g. `export AWS_ACCESS_KEY_ID=...` & `export AWS_SECRET_ACCESS_KEY=...`).
+6. Run `python3 builder.py` from `/var/runtime`.
 
-To deploy them and shard them, do this:
-
-```
-fab -f fabfile_builder.py -R builder deploy_runtimes:num_shards=50
-```
-
+Works with `amazonlinux:2023.0.20230607.0`.
